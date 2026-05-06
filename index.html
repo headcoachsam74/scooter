@@ -86,15 +86,6 @@
     let speed = 0;
     let distance = 0.0;
 
-    setInterval(() => {
-        // Exemple de variation aléatoire pour le test
-        speed = Math.floor(Math.random() * 50); 
-        distance += 0.01;
-        
-        document.getElementById('speed').innerHTML = `${speed} <small style="font-size: 15px;">km/h</small>`;
-        document.getElementById('distance').innerHTML = `${distance.toFixed(2)} <small style="font-size: 15px;">km</small>`;
-    }, 3000);
-
     updateWeather();
 </script>
 

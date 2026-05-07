@@ -4,11 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Kaabo Dashboard Pro QC</title>
+    
+    <!-- CHARGEMENT PRIORITAIRE DE LEAFLET -->
     <link rel="stylesheet" href="https://unpkg.com" />
+    <script src="https://unpkg.com"></script>
+    
     <style>
         body { font-family: 'Inter', sans-serif; margin: 0; background: #000; color: #fff; overflow: hidden; height: 100vh; }
         #overlay { position: fixed; inset: 0; background: #000; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; }
-        .btn-start { padding: 20px 40px; font-size: 20px; background: #ff3b30; color: #fff; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; }
+        .btn-start { padding: 20px 40px; font-size: 20px; background: #ff3b30; color: #fff; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; text-transform: uppercase; }
         
         #main-content { display: flex; flex-direction: column; height: 100vh; }
         .top-section { background: #000; padding: 10px; text-align: center; }
@@ -16,18 +20,18 @@
         
         .stats-row { display: flex; justify-content: space-around; gap: 5px; padding: 5px; }
         .stat-card { background: #121212; flex: 1; padding: 10px; border-radius: 10px; border: 1px solid #222; }
-        .stat-label { font-size: 9px; color: #666; display: block; }
+        .stat-label { font-size: 9px; color: #666; display: block; text-transform: uppercase; }
         .stat-value { font-size: 22px; font-weight: bold; }
 
-        #map-container { flex-grow: 1; position: relative; background: #ccc; overflow: hidden; }
-        #map { width: 100%; height: 100%; transition: transform 0.3s linear; }
+        #map-container { flex-grow: 1; position: relative; background: #ddd; overflow: hidden; }
+        #map { width: 100%; height: 100%; transition: transform 0.2s linear; }
         
         .separator { height: 4px; background: #ff3b30; box-shadow: 0 0 10px #ff3b30; z-index: 5; }
 
         @media (orientation: landscape) {
             #main-content { flex-direction: row; }
-            .top-section { width: 35%; height: 100%; border-right: 4px solid #ff3b30; }
-            .stats-row { flex-direction: column; }
+            .top-section { width: 35%; height: 100%; border-right: 4px solid #ff3b30; display: flex; flex-direction: column; justify-content: center; }
+            .stats-row { flex-direction: column; gap: 8px; }
             #map-container { width: 65%; }
         }
     </style>
@@ -35,19 +39,19 @@
 <body>
 
 <div id="overlay">
-    <h1 style="letter-spacing:4px">KAABO PRO QC</h1>
+    <h1 style="letter-spacing:4px; margin-bottom:30px;">KAABO PRO QC</h1>
     <button class="btn-start" onclick="initApp()">DÉMARRER</button>
 </div>
 
 <div id="main-content">
     <div class="top-section">
-        <div style="font-size: 12px; color: #555;">VITESSE</div>
+        <div style="font-size: 11px; color: #555; letter-spacing: 2px;">VITESSE</div>
         <div class="vitesse-value" id="speed">0</div>
-        <div style="font-size: 14px; color: #555;">KM/H</div>
+        <div style="font-size: 13px; color: #555;">KM/H</div>
         <div class="stats-row">
-            <div class="stat-card"><span class="stat-label">DIST.</span><span class="stat-value" id="dist">0.0</span></div>
-            <div class="stat-card"><span class="stat-label">ALT.</span><span class="stat-value" id="alt">--</span></div>
-            <div class="stat-card"><span class="stat-label">TEMP.</span><span class="stat-value" id="temp">--</span></div>
+            <div class="stat-card"><span class="stat-label">DISTANCE</span><span class="stat-value" id="dist">0.0</span><span style="font-size:10px; color:#555"> KM</span></div>
+            <div class="stat-card"><span class="stat-label">ALTITUDE</span><span class="stat-value" id="alt">--</span></div>
+            <div class="stat-card"><span class="stat-label">MÉTÉO</span><span class="stat-value" id="temp">--°</span></div>
         </div>
     </div>
     <div class="separator"></div>
@@ -56,34 +60,58 @@
     </div>
 </div>
 
-<script src="https://unpkg.com"></script>
 <script>
     let map, marker, lastPos = null, totalDist = 0;
     const apiKey = "2363a4d3b8b7a54f0eab1c09d32c8c8e";
 
     function initApp() {
+        // Vérification ultime de Leaflet
+        if (typeof L === 'undefined') {
+            alert("Erreur : La bibliothèque de carte n'est pas chargée. Vérifiez votre connexion internet.");
+            return;
+        }
+
         document.getElementById('overlay').style.display = 'none';
         
-        // Demande plein écran
-        if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen();
+        // Plein écran
+        const doc = document.documentElement;
+        if (doc.requestFullscreen) doc.requestFullscreen();
+        else if (doc.webkitRequestFullscreen) doc.webkitRequestFullscreen();
 
         // Initialisation Carte
         try {
-            map = L.map('map', { zoomControl: false, attributionControl: false }).setView([45.5, -73.5], 17);
-            L.tileLayer('https://{s}://{z}/{x}/{y}{r}.png').addTo(map);
-            marker = L.circleMarker([45.5, -73.5], { color: '#000', fillColor: '#ff3b30', fillOpacity: 1, radius: 9, weight: 2 }).addTo(map);
-            
-            // Forcer la carte à se redimensionner
-            setTimeout(() => { map.invalidateSize(); }, 500);
-        } catch (e) { alert("Erreur Carte: " + e.message); }
+            map = L.map('map', { 
+                zoomControl: false, 
+                attributionControl: false 
+            }).setView([45.5017, -73.5673], 17);
 
-        // Lancement GPS
+            // Style ARGENT (Haut contraste pour soleil)
+            L.tileLayer('https://{s}://{z}/{x}/{y}{r}.png').addTo(map);
+
+            marker = L.circleMarker([45.5017, -73.5673], { 
+                color: '#000', 
+                fillColor: '#ff3b30', 
+                fillOpacity: 1, 
+                radius: 10, 
+                weight: 3 
+            }).addTo(map);
+            
+            setTimeout(() => { map.invalidateSize(); }, 400);
+        } catch (e) { 
+            alert("Erreur Carte : " + e.message); 
+        }
+
+        // GPS
         if ("geolocation" in navigator) {
             navigator.geolocation.watchPosition(updateGPS, (err) => {
-                alert("Erreur GPS (" + err.code + "): " + err.message + "\nAssurez-vous d'être en HTTPS et d'autoriser la position.");
-            }, { enableHighAccuracy: true });
+                let msg = "Erreur GPS : ";
+                if (err.code == 1) msg += "Permission refusée. Activez le GPS dans les réglages du navigateur.";
+                else if (err.code == 2) msg += "Position indisponible.";
+                else msg += err.message;
+                alert(msg);
+            }, { enableHighAccuracy: true, maximumAge: 0 });
         } else {
-            alert("Le GPS n'est pas supporté par ce téléphone.");
+            alert("GPS non supporté.");
         }
 
         getWeather();
@@ -96,13 +124,15 @@
         const heading = p.coords.heading;
 
         document.getElementById('speed').innerText = speed;
-        document.getElementById('alt').innerText = p.coords.altitude ? Math.round(p.coords.altitude) + "m" : "--";
+        if (p.coords.altitude) {
+            document.getElementById('alt').innerText = Math.round(p.coords.altitude) + "m";
+        }
 
         const pos = [lat, lon];
         marker.setLatLng(pos);
         map.panTo(pos);
 
-        // Boussole : on fait pivoter la carte
+        // Rotation boussole
         if (heading !== null && speed > 2) {
             document.getElementById('map').style.transform = `rotate(${-heading}deg)`;
         }
@@ -117,10 +147,12 @@
 
     async function getWeather() {
         try {
-            const r = await fetch(`https://openweathermap.org{apiKey}&units=metric`);
+            const r = await fetch(`https://openweathermap.org{apiKey}&units=metric&lang=fr`);
             const d = await r.json();
             if (d.main) document.getElementById('temp').innerText = Math.round(d.main.temp) + "°";
-        } catch (e) { document.getElementById('temp').innerText = "!!"; }
+        } catch (e) { 
+            console.log("Erreur météo");
+        }
     }
 </script>
 </body>

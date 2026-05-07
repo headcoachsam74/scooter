@@ -5,14 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Kaabo Dashboard Pro QC</title>
     
-    <!-- Scripts chargés avec priorité -->
+    <!-- Scripts avec chargement asynchrone pour éviter le blocage -->
     <link rel="stylesheet" href="https://unpkg.com" />
     <script src="https://unpkg.com"></script>
     
     <style>
         body { font-family: 'Inter', sans-serif; margin: 0; background: #000; color: #fff; overflow: hidden; height: 100vh; }
         #overlay { position: fixed; inset: 0; background: #000; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; }
-        .logo-start { width: 220px; margin-bottom: 30px; }
+        .logo-start { width: 220px; margin-bottom: 30px; max-height: 150px; object-fit: contain; }
         .btn-start { padding: 18px 40px; font-size: 20px; background: #ff3b30; color: #fff; border: none; border-radius: 12px; font-weight: 900; cursor: pointer; text-transform: uppercase; }
         
         #main-content { display: flex; flex-direction: column; height: 100vh; width: 100vw; }
@@ -43,8 +43,9 @@
 <body>
 
 <div id="overlay">
-    <img src="logo-kaabo.png" class="logo-start" alt="Kaabo Logo" onerror="this.style.display='none'">
-    <button class="btn-start" id="btnAction" onclick="lancer()">Chargement...</button>
+    <!-- Image avec fallback si elle ne charge pas -->
+    <img src="logo-kaabo.png" class="logo-start" alt="Logo" onerror="this.src='https://placeholder.com'">
+    <button class="btn-start" onclick="lancer()">DÉMARRER</button>
 </div>
 
 <div id="main-content">
@@ -68,20 +69,15 @@
     let map, marker, lastPos = null, totalDist = 0;
     const apiKey = "2363a4d3b8b7a54f0eab1c09d32c8c8e";
 
-    // On attend que la page soit prête
-    window.onload = function() {
-        document.getElementById('btnAction').innerText = "DÉMARRER";
-    };
-
     function lancer() {
         document.getElementById('overlay').style.display = 'none';
         
-        // Mode Plein Écran
+        // Mode Plein Écran pour mobile
         const doc = document.documentElement;
         if (doc.requestFullscreen) doc.requestFullscreen();
         else if (doc.webkitRequestFullscreen) doc.webkitRequestFullscreen();
 
-        // Tentative d'initialisation de la carte
+        // Initialisation de la carte (si Leaflet est bien chargé)
         if (typeof L !== 'undefined') {
             try {
                 map = L.map('map', { zoomControl: false, attributionControl: false }).setView([45.5, -73.5], 16);
@@ -89,8 +85,12 @@
                 marker = L.circleMarker([45.5, -73.5], { 
                     color: '#000', fillColor: '#ff3b30', fillOpacity: 1, radius: 10, weight: 3 
                 }).addTo(map);
-                setTimeout(() => { map.invalidateSize(); }, 500);
-            } catch (e) { console.log("Carte ignorée : mode compteur seul."); }
+                
+                // Correction du bug de carte grise/blanche au chargement
+                setTimeout(() => { map.invalidateSize(); }, 300);
+            } catch (e) {
+                console.warn("Erreur d'initialisation de la carte, mode compteur seul.");
+            }
         }
 
         demarrerGPS();
@@ -105,23 +105,32 @@
                 const speed = Math.round((p.coords.speed || 0) * 3.6);
                 const heading = p.coords.heading;
 
+                // Mise à jour des textes (toujours prioritaire)
                 document.getElementById('speed').innerText = speed;
                 document.getElementById('alt').innerText = p.coords.altitude ? Math.round(p.coords.altitude) + "m" : "--";
 
+                // Mise à jour de la carte (seulement si elle existe)
                 if (map && marker) {
                     const pos = [lat, lon];
                     marker.setLatLng(pos);
                     map.panTo(pos);
+
+                    // Rotation boussole
                     if (heading !== null && speed > 2) {
                         document.getElementById('map').style.transform = `rotate(${-heading}deg)`;
                     }
+
                     if (lastPos) {
                         totalDist += map.distance(lastPos, pos) / 1000;
                         document.getElementById('dist').innerText = totalDist.toFixed(1);
                     }
                     lastPos = pos;
                 }
-            }, (err) => { alert("GPS : " + err.message); }, { enableHighAccuracy: true });
+            }, (err) => { 
+                alert("GPS : " + err.message + "\nAssurez-vous d'activer la localisation."); 
+            }, { enableHighAccuracy: true, maximumAge: 0 });
+        } else {
+            alert("Ce navigateur ne supporte pas le GPS.");
         }
     }
 
@@ -130,7 +139,9 @@
             const r = await fetch(`https://openweathermap.org{apiKey}`);
             const d = await r.json();
             if (d.main) document.getElementById('temp').innerText = Math.round(d.main.temp) + "°";
-        } catch (e) {}
+        } catch (e) {
+            document.getElementById('temp').innerText = "!!";
+        }
     }
 </script>
 </body>

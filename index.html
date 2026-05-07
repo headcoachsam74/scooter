@@ -5,12 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Kaabo Dashboard Pro QC</title>
     
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com" />
     
     <style>
         body { font-family: 'Inter', Arial, sans-serif; margin: 0; background-color: #000; color: #fff; overflow: hidden; height: 100vh; }
         
-        /* Overlay Start */
         #overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: #000; display: flex; flex-direction: column;
@@ -21,23 +20,10 @@
             border: none; border-radius: 12px; cursor: pointer; font-weight: 900; text-transform: uppercase;
         }
 
-        /* STRUCTURE PRINCIPALE */
-        #main-content {
-            display: flex;
-            flex-direction: column; /* Par défaut : Vertical */
-            height: 100vh;
-            width: 100vw;
-        }
+        #main-content { display: flex; flex-direction: column; height: 100vh; width: 100vw; }
 
         /* SECTION STATS */
-        .top-section { 
-            background: #000; 
-            padding: 10px; 
-            display: flex; 
-            flex-direction: column;
-            justify-content: center;
-        }
-
+        .top-section { background: #000; padding: 10px; display: flex; flex-direction: column; justify-content: center; }
         .vitesse-container { text-align: center; margin-bottom: 5px; }
         .vitesse-label { font-size: 11px; color: #555; text-transform: uppercase; letter-spacing: 2px; }
         .vitesse-value { font-size: 100px; font-weight: 800; color: #ff3b30; line-height: 0.8; margin: 5px 0; }
@@ -47,52 +33,43 @@
         .stat-card { 
             background: #121212; flex: 1; padding: 12px 5px; border-radius: 10px; 
             border: 1px solid #1c1c1c; text-align: center;
-            display: flex; flex-direction: column; justify-content: center;
         }
         .stat-label { font-size: 9px; color: #666; text-transform: uppercase; margin-bottom: 4px; }
         .stat-value { font-size: 24px; font-weight: 800; color: #fff; }
-        .stat-sub { font-size: 10px; color: #555; font-weight: bold; margin-left: 2px; }
+        .stat-sub { font-size: 10px; color: #555; font-weight: bold; }
 
-        .separator { height: 3px; background: #ff3b30; width: 100%; z-index: 10; }
+        .separator { height: 4px; background: #ff3b30; width: 100%; z-index: 10; box-shadow: 0 0 15px #ff3b30; }
 
-        /* CARTE */
-        #map-container { position: relative; flex-grow: 1; width: 100%; min-height: 0; }
-        #map { width: 100%; height: 100%; background: #000; }
+        /* CARTE ET LOGO */
+        #map-container { position: relative; flex-grow: 1; width: 100%; overflow: hidden; background: #ddd; }
+        
+        /* Rotation de la carte */
+        #map { 
+            width: 100%; height: 100%; 
+            transition: transform 0.2s linear; /* Rotation fluide */
+        }
 
         .map-logo {
             position: absolute; bottom: 15px; right: 15px;
-            width: 150px; z-index: 1000; 
-            filter: drop-shadow(0 0 10px rgba(0,0,0,0.8));
+            width: 120px; z-index: 1000; filter: drop-shadow(0 0 5px rgba(0,0,0,0.5));
             pointer-events: none;
         }
 
-        /* --- MODE HORIZONTAL (LANDSCAPE) --- */
+        /* MODE PAYSAGE */
         @media (orientation: landscape) {
-            #main-content { flex-direction: row; } /* Côte à côte */
-            
-            .top-section { 
-                width: 35%; /* Les stats prennent le tiers gauche */
-                height: 100%;
-                border-right: 2px solid #ff3b30;
-            }
-
-            .vitesse-value { font-size: 120px; } /* Plus gros en paysage */
-            
-            .stats-row { flex-direction: column; gap: 10px; } /* Colonne pour les petits widgets */
-            .stat-card { min-height: 60px; }
-
-            .separator { display: none; } /* On cache la ligne horizontale */
-            
+            #main-content { flex-direction: row; }
+            .top-section { width: 35%; height: 100%; border-right: 3px solid #ff3b30; }
+            .vitesse-value { font-size: 110px; }
+            .stats-row { flex-direction: column; gap: 10px; }
+            .separator { display: none; }
             #map-container { width: 65%; height: 100%; }
-            .map-logo { width: 180px; }
         }
     </style>
 </head>
 <body>
 
 <div id="overlay">
-    <!-- Remplacez par votre logo ou texte -->
-    <h1 style="color:white; font-style: italic;">KAABO PRO QC</h1>
+    <h1 style="color:white; font-style: italic; letter-spacing: 5px;">KAABO PRO QC</h1>
     <button class="btn-start" onclick="startApp()">DÉMARRER</button>
 </div>
 
@@ -103,7 +80,6 @@
             <div class="vitesse-value" id="speed">0</div>
             <div class="vitesse-unit">KM/H</div>
         </div>
-
         <div class="stats-row">
             <div class="stat-card">
                 <span class="stat-label">DISTANCE</span>
@@ -128,7 +104,7 @@
     </div>
 </div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com"></script>
 
 <script>
     let map, marker, totalDist = 0, lastPos = null;
@@ -136,17 +112,12 @@
     const apiKey = "2363a4d3b8b7a54f0eab1c09d32c8c8e";
 
     async function requestWakeLock() {
-        try {
-            if ('wakeLock' in navigator) {
-                wakeLock = await navigator.wakeLock.request('screen');
-            }
-        } catch (err) { console.error(err); }
+        try { if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen'); } catch (err) {}
     }
 
     function startApp() {
         document.getElementById('overlay').style.display = 'none';
-        const el = document.documentElement;
-        if (el.requestFullscreen) el.requestFullscreen();
+        if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen();
         requestWakeLock();
         initMap();
         initGPS();
@@ -154,14 +125,20 @@
     }
 
     function initMap() {
-        // Correction pour que la carte prenne tout l'espace disponible
-        map = L.map('map', { zoomControl: false, attributionControl: false }).setView([45.5017, -73.5673], 17);
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
+        // Utilisation de "Positron" (Gris clair haute visibilité) au lieu de "Dark"
+        map = L.map('map', { 
+            zoomControl: false, 
+            attributionControl: false,
+            rotate: true 
+        }).setView([45.5017, -73.5673], 18);
+
+        L.tileLayer('https://{s}://{z}/{x}/{y}{r}.png').addTo(map);
+
+        // Marqueur avec une bordure noire pour qu'il "pop" sur le gris
         marker = L.circleMarker([45.5017, -73.5673], { 
-            color: '#ff3b30', radius: 8, fillOpacity: 1, weight: 3, fillColor: '#ff3b30' 
+            color: '#000', weight: 2, fillColor: '#ff3b30', fillOpacity: 1, radius: 10 
         }).addTo(map);
         
-        // Force le redimensionnement de la carte lors du changement d'orientation
         window.addEventListener('resize', () => { setTimeout(() => { map.invalidateSize(); }, 200); });
     }
 
@@ -172,6 +149,7 @@
                 const alt = Math.round(p.coords.altitude || 0);
                 const lat = p.coords.latitude;
                 const lon = p.coords.longitude;
+                const heading = p.coords.heading; // Direction du mouvement
 
                 document.getElementById('speed').innerText = speedKmh;
                 document.getElementById('altitude').innerText = (alt != 0) ? alt : "--";
@@ -180,19 +158,24 @@
                 marker.setLatLng(curPos);
                 map.panTo(curPos);
 
+                // Rotation de la carte selon le mouvement (seulement si on roule)
+                if (heading !== null && speedKmh > 2) {
+                    document.getElementById('map').style.transform = `rotate(${-heading}deg)`;
+                }
+
                 if (lastPos) {
                     const d = map.distance(lastPos, curPos);
                     totalDist += d / 1000;
                     document.getElementById('distance').innerText = totalDist.toFixed(1);
                 }
                 lastPos = curPos;
-            }, null, { enableHighAccuracy: true });
+            }, null, { enableHighAccuracy: true, maximumAge: 0 });
         }
     }
 
     async function getWeather() {
         try {
-            const res = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=Montreal&appid=${apiKey}&units=metric&lang=fr`);
+            const res = await fetch(`https://openweathermap.org{apiKey}&units=metric&lang=fr`);
             const d = await res.json();
             if(d.main) document.getElementById('temp').innerText = Math.round(d.main.temp) + "°";
         } catch(e) {}

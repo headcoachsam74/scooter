@@ -5,59 +5,37 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Kaabo Dashboard Pro QC</title>
     
-    <!-- Scripts Carte -->
-    <link rel="stylesheet" href="https://unpkg.com" />
-    <script src="https://unpkg.com"></script>
+    <!-- Scripts de secours (CDN alternatif) -->
+    <link rel="stylesheet" href="https://jsdelivr.net" />
+    <script src="https://jsdelivr.net"></script>
     
     <style>
         body { font-family: 'Inter', sans-serif; margin: 0; background: #000; color: #fff; overflow: hidden; height: 100vh; }
+        #overlay { position: fixed; inset: 0; background: #000; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; }
+        .logo-start { width: 220px; margin-bottom: 30px; }
+        .btn-start { padding: 18px 40px; font-size: 20px; background: #ff3b30; color: #fff; border: none; border-radius: 12px; font-weight: 900; cursor: pointer; text-transform: uppercase; }
         
-        /* Overlay de démarrage */
-        #overlay { 
-            position: fixed; inset: 0; background: #000; 
-            display: flex; flex-direction: column; justify-content: center; 
-            align-items: center; z-index: 9999; 
-        }
-        .logo-start { width: 250px; margin-bottom: 40px; }
-        .btn-start { 
-            padding: 20px 50px; font-size: 22px; background: #ff3b30; color: #fff; 
-            border: none; border-radius: 15px; font-weight: 900; cursor: pointer; 
-            text-transform: uppercase; box-shadow: 0 0 20px rgba(255, 59, 48, 0.4);
-        }
-
         #main-content { display: flex; flex-direction: column; height: 100vh; width: 100vw; }
-
-        /* Stats */
-        .top-section { background: #000; padding: 15px 10px; text-align: center; }
-        .vitesse-value { font-size: 110px; font-weight: 900; color: #ff3b30; line-height: 0.8; margin: 10px 0; }
+        .top-section { background: #000; padding: 10px; text-align: center; }
+        .vitesse-value { font-size: 100px; font-weight: 900; color: #ff3b30; line-height: 0.8; margin: 10px 0; }
         
-        .stats-row { display: flex; justify-content: space-around; gap: 8px; padding: 5px; }
-        .stat-card { background: #121212; flex: 1; padding: 12px; border-radius: 12px; border: 1px solid #222; }
-        .stat-label { font-size: 9px; color: #666; display: block; text-transform: uppercase; margin-bottom: 4px; }
-        .stat-value { font-size: 26px; font-weight: 800; }
+        .stats-row { display: flex; justify-content: space-around; gap: 5px; }
+        .stat-card { background: #121212; flex: 1; padding: 10px; border-radius: 10px; border: 1px solid #222; min-height: 60px; }
+        .stat-label { font-size: 9px; color: #666; display: block; text-transform: uppercase; }
+        .stat-value { font-size: 22px; font-weight: 800; }
 
-        /* Carte */
-        #map-container { flex-grow: 1; position: relative; background: #222; overflow: hidden; }
+        #map-container { flex-grow: 1; position: relative; background: #1a1a1a; overflow: hidden; }
         #map { width: 100%; height: 100%; transition: transform 0.2s linear; }
-        
-        .map-logo {
-            position: absolute; bottom: 20px; right: 20px;
-            width: 140px; z-index: 1000; pointer-events: none;
-            filter: drop-shadow(0 0 8px rgba(0,0,0,0.8));
-        }
+        .map-logo { position: absolute; bottom: 15px; right: 15px; width: 120px; z-index: 1000; pointer-events: none; opacity: 0.8; }
 
-        .separator { height: 5px; background: #ff3b30; box-shadow: 0 0 15px #ff3b30; z-index: 10; }
+        .separator { height: 4px; background: #ff3b30; box-shadow: 0 0 10px #ff3b30; z-index: 10; }
 
-        /* Mode Paysage (Horizontal) */
         @media (orientation: landscape) {
             #main-content { flex-direction: row; }
-            .top-section { 
-                width: 38%; height: 100%; border-right: 5px solid #ff3b30; 
-                display: flex; flex-direction: column; justify-content: center; 
-            }
-            .vitesse-value { font-size: 120px; }
-            .stats-row { flex-direction: column; gap: 10px; padding: 0 20px; }
-            #map-container { width: 62%; }
+            .top-section { width: 35%; height: 100%; border-right: 4px solid #ff3b30; display: flex; flex-direction: column; justify-content: center; }
+            .stats-row { flex-direction: column; gap: 8px; align-items: center; }
+            .stat-card { width: 80%; }
+            #map-container { width: 65%; }
             .separator { display: none; }
         }
     </style>
@@ -65,36 +43,24 @@
 <body>
 
 <div id="overlay">
-    <img src="logo-kaabo.png" class="logo-start" alt="Kaabo Logo">
-    <button class="btn-start" onclick="initApp()">Démarrer</button>
+    <img src="logo-kaabo.png" class="logo-start" alt="Kaabo Logo" onerror="this.style.display='none'">
+    <button class="btn-start" onclick="checkAndStart()">Démarrer</button>
 </div>
 
 <div id="main-content">
     <div class="top-section">
-        <div style="font-size: 11px; color: #555; letter-spacing: 3px;">VITESSE (KM/H)</div>
+        <div style="font-size: 10px; color: #555; letter-spacing: 2px;">VITESSE (KM/H)</div>
         <div class="vitesse-value" id="speed">0</div>
-        
         <div class="stats-row">
-            <div class="stat-card">
-                <span class="stat-label">Distance</span>
-                <span class="stat-value" id="dist">0.0</span>
-            </div>
-            <div class="stat-card">
-                <span class="stat-label">Altitude</span>
-                <span class="stat-value" id="alt">--</span>
-            </div>
-            <div class="stat-card">
-                <span class="stat-label">Météo</span>
-                <span class="stat-value" id="temp">--°</span>
-            </div>
+            <div class="stat-card"><span class="stat-label">Dist.</span><span class="stat-value" id="dist">0.0</span></div>
+            <div class="stat-card"><span class="stat-label">Alt.</span><span class="stat-value" id="alt">--</span></div>
+            <div class="stat-card"><span class="stat-label">Météo</span><span class="stat-value" id="temp">--°</span></div>
         </div>
     </div>
-    
     <div class="separator"></div>
-    
     <div id="map-container">
         <div id="map"></div>
-        <img src="logo-kaabo.png" class="map-logo" alt="Logo">
+        <img src="logo-kaabo.png" class="map-logo" alt="Logo" onerror="this.style.display='none'">
     </div>
 </div>
 
@@ -102,12 +68,16 @@
     let map, marker, lastPos = null, totalDist = 0;
     const apiKey = "2363a4d3b8b7a54f0eab1c09d32c8c8e";
 
-    function initApp() {
+    function checkAndStart() {
         if (typeof L === 'undefined') {
-            alert("Erreur de connexion : Leaflet n'est pas chargé.");
+            alert("La carte charge encore ou votre connexion bloque les scripts. Réessayez dans 5 secondes.");
+            location.reload(); // Force le rechargement si Leaflet manque
             return;
         }
+        initApp();
+    }
 
+    function initApp() {
         document.getElementById('overlay').style.display = 'none';
         
         // Plein écran
@@ -115,24 +85,21 @@
         if (doc.requestFullscreen) doc.requestFullscreen();
         else if (doc.webkitRequestFullscreen) doc.webkitRequestFullscreen();
 
-        initMap();
-        initGPS();
-        getWeather();
-    }
-
-    function initMap() {
+        // Init Map avec un serveur alternatif (Wikimedia) qui est souvent plus rapide
         try {
-            // OpenStreetMap Standard pour une meilleure visibilité
-            map = L.map('map', { zoomControl: false, attributionControl: false }).setView([45.5017, -73.5673], 17);
+            map = L.map('map', { zoomControl: false, attributionControl: false }).setView([45.50, -73.56], 16);
             
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-            marker = L.circleMarker([45.5017, -73.5673], { 
+            marker = L.circleMarker([45.50, -73.56], { 
                 color: '#000', fillColor: '#ff3b30', fillOpacity: 1, radius: 10, weight: 3 
             }).addTo(map);
             
-            setTimeout(() => { map.invalidateSize(); }, 500);
-        } catch (e) { console.error("Erreur Map:", e); }
+            setTimeout(() => { map.invalidateSize(); }, 600);
+        } catch (e) { console.error(e); }
+
+        initGPS();
+        getWeather();
     }
 
     function initGPS() {
@@ -144,15 +111,12 @@
                 const heading = p.coords.heading;
 
                 document.getElementById('speed').innerText = speed;
-                if (p.coords.altitude) {
-                    document.getElementById('alt').innerText = Math.round(p.coords.altitude) + "m";
-                }
+                document.getElementById('alt').innerText = p.coords.altitude ? Math.round(p.coords.altitude) + "m" : "--";
 
                 const pos = [lat, lon];
                 marker.setLatLng(pos);
                 map.panTo(pos);
 
-                // Rotation de la boussole (seulement si en mouvement)
                 if (heading !== null && speed > 2) {
                     document.getElementById('map').style.transform = `rotate(${-heading}deg)`;
                 }
@@ -164,24 +128,18 @@
                 }
                 lastPos = pos;
             }, (err) => {
-                console.error("GPS Error:", err);
+                alert("GPS Error: " + err.message);
             }, { enableHighAccuracy: true, maximumAge: 0 });
         }
     }
 
     async function getWeather() {
         try {
-            const url = `https://openweathermap.org{apiKey}`;
-            const r = await fetch(url);
+            const r = await fetch(`https://openweathermap.org{apiKey}`);
             const d = await r.json();
-            if (d.main) {
-                document.getElementById('temp').innerText = Math.round(d.main.temp) + "°";
-            }
-        } catch (e) { 
-            document.getElementById('temp').innerText = "Err";
-        }
+            if (d.main) document.getElementById('temp').innerText = Math.round(d.main.temp) + "°";
+        } catch (e) {}
     }
 </script>
-
 </body>
 </html>

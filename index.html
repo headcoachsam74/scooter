@@ -5,44 +5,60 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Kaabo Dashboard Pro QC</title>
     
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Scripts de cartographie -->
+    <link rel="stylesheet" href="https://unpkg.com" />
+    <script src="https://unpkg.com"></script>
     
     <style>
         body { font-family: 'Inter', sans-serif; margin: 0; background: #000; color: #fff; overflow: hidden; height: 100vh; }
         
-        /* Overlay */
-        #overlay { position: fixed; inset: 0; background: #000; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; }
-        .btn-start { padding: 20px 50px; font-size: 22px; background: #ff3b30; color: white; border: none; border-radius: 12px; font-weight: 900; cursor: pointer; text-transform: uppercase; }
+        /* Écran de démarrage */
+        #overlay { 
+            position: fixed; inset: 0; background: #000; 
+            display: flex; flex-direction: column; justify-content: center; 
+            align-items: center; z-index: 9999; 
+        }
+        .logo-start { width: 240px; margin-bottom: 40px; }
+        .btn-start { 
+            padding: 20px 50px; font-size: 22px; background: #ff3b30; color: #fff; 
+            border: none; border-radius: 15px; font-weight: 900; cursor: pointer; 
+            text-transform: uppercase; box-shadow: 0 0 20px rgba(255, 59, 48, 0.4);
+        }
 
         #main-content { display: flex; flex-direction: column; height: 100vh; width: 100vw; }
 
-        /* HEADER STATS */
-        .top-section { background: #000; padding: 10px; text-align: center; }
-        .vitesse-value { font-size: 100px; font-weight: 900; color: #ff3b30; line-height: 0.8; margin: 10px 0; }
-        .vitesse-unit { font-size: 14px; color: #555; letter-spacing: 2px; }
-
+        /* Section Statistiques */
+        .top-section { background: #000; padding: 15px 10px; text-align: center; }
+        .vitesse-value { font-size: 110px; font-weight: 900; color: #ff3b30; line-height: 0.8; margin: 10px 0; }
+        .vitesse-label { font-size: 12px; color: #555; letter-spacing: 3px; text-transform: uppercase; }
+        
         .stats-row { display: flex; justify-content: space-around; gap: 8px; padding: 5px; }
-        .stat-card { background: #121212; flex: 1; padding: 12px; border-radius: 10px; border: 1px solid #1c1c1c; }
-        .stat-label { font-size: 9px; color: #666; text-transform: uppercase; display: block; margin-bottom: 4px; }
-        .stat-value { font-size: 24px; font-weight: 800; }
+        .stat-card { background: #121212; flex: 1; padding: 12px; border-radius: 12px; border: 1px solid #222; }
+        .stat-label { font-size: 9px; color: #666; display: block; text-transform: uppercase; margin-bottom: 4px; }
+        .stat-value { font-size: 26px; font-weight: 800; }
 
-        .separator { height: 4px; background: #ff3b30; width: 100%; z-index: 10; box-shadow: 0 0 10px #ff3b30; }
-
-        /* MAP */
-        #map-container { position: relative; flex-grow: 1; width: 100%; background: #ddd; overflow: hidden; }
+        /* Section Carte */
+        #map-container { flex-grow: 1; position: relative; background: #1a1a1a; overflow: hidden; }
         #map { width: 100%; height: 100%; transition: transform 0.2s linear; }
+        
+        .map-logo {
+            position: absolute; bottom: 20px; right: 20px;
+            width: 140px; z-index: 1000; pointer-events: none;
+            filter: drop-shadow(0 0 10px rgba(0,0,0,0.8));
+        }
 
-        .map-logo { position: absolute; bottom: 20px; right: 20px; width: 150px; z-index: 1000; pointer-events: none; filter: drop-shadow(0 0 10px rgba(0,0,0,0.5)); }
+        .separator { height: 5px; background: #ff3b30; box-shadow: 0 0 15px #ff3b30; z-index: 10; }
 
-        /* MODE HORIZONTAL */
+        /* Optimisation Mode Paysage (Horizontal) */
         @media (orientation: landscape) {
             #main-content { flex-direction: row; }
-            .top-section { width: 35%; height: 100%; border-right: 4px solid #ff3b30; display: flex; flex-direction: column; justify-content: center; }
-            .vitesse-value { font-size: 110px; }
-            .stats-row { flex-direction: column; align-items: center; gap: 10px; }
-            .stat-card { width: 80%; }
-            #map-container { width: 65%; height: 100%; }
+            .top-section { 
+                width: 38%; height: 100%; border-right: 5px solid #ff3b30; 
+                display: flex; flex-direction: column; justify-content: center; 
+            }
+            .vitesse-value { font-size: 120px; }
+            .stats-row { flex-direction: column; gap: 10px; padding: 0 20px; }
+            #map-container { width: 62%; }
             .separator { display: none; }
         }
     </style>
@@ -50,19 +66,28 @@
 <body>
 
 <div id="overlay">
-    <img src="logo-kaabo.png" alt="Logo" style="width: 240px; margin-bottom: 40px;" onerror="this.style.display='none'">
-    <button class="btn-start" onclick="startApp()">DÉMARRER</button>
+    <img src="logo-kaabo.png" class="logo-start" alt="Kaabo Logo" onerror="this.style.display='none'">
+    <button class="btn-start" onclick="initApp()">Démarrer</button>
 </div>
 
 <div id="main-content">
     <div class="top-section">
-        <div class="vitesse-unit">VITESSE (KM/H)</div>
+        <div class="vitesse-label">Vitesse (KM/H)</div>
         <div class="vitesse-value" id="speed">0</div>
         
         <div class="stats-row">
-            <div class="stat-card"><span class="stat-label">Distance</span><span class="stat-value" id="dist">0.0</span></div>
-            <div class="stat-card"><span class="stat-label">Altitude</span><span class="stat-value" id="alt">--</span></div>
-            <div class="stat-card"><span class="stat-label">Météo</span><span class="stat-value" id="temp">--°</span></div>
+            <div class="stat-card">
+                <span class="stat-label">Distance</span>
+                <span class="stat-value" id="dist">0.0</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Altitude</span>
+                <span class="stat-value" id="alt">--</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Météo</span>
+                <span class="stat-value" id="temp">--°</span>
+            </div>
         </div>
     </div>
     
@@ -70,25 +95,28 @@
     
     <div id="map-container">
         <div id="map"></div>
-        <img src="logo-kaabo.png" class="map-logo" alt="Kaabo Logo" onerror="this.style.display='none'">
+        <img src="logo-kaabo.png" class="map-logo" alt="Logo" onerror="this.style.display='none'">
     </div>
 </div>
 
 <script>
-    let map, marker, totalDist = 0, lastPos = null, wakeLock = null;
+    let map, marker, lastPos = null, totalDist = 0, wakeLock = null;
     const apiKey = "2363a4d3b8b7a54f0eab1c09d32c8c8e";
 
-    async function startApp() {
-        if (typeof L === 'undefined') { alert("Erreur: Carte non chargée. Vérifiez votre connexion."); return; }
-        
+    async function initApp() {
+        if (typeof L === 'undefined') {
+            alert("Erreur de chargement. Vérifiez votre connexion.");
+            return;
+        }
+
         document.getElementById('overlay').style.display = 'none';
         
-        // Plein écran
-        const el = document.documentElement;
-        if (el.requestFullscreen) el.requestFullscreen();
-        else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+        // Mode plein écran
+        const doc = document.documentElement;
+        if (doc.requestFullscreen) doc.requestFullscreen();
+        else if (doc.webkitRequestFullscreen) doc.webkitRequestFullscreen();
 
-        // WakeLock (Empêcher veille)
+        // Empêcher la mise en veille
         try { if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen'); } catch (e) {}
 
         initMap();
@@ -98,56 +126,71 @@
 
     function initMap() {
         try {
-            // Style gris clair (Positron) très visible au soleil
+            // Initialisation centrée par défaut
             map = L.map('map', { zoomControl: false, attributionControl: false }).setView([45.5017, -73.5673], 17);
-            L.tileLayer('https://{s}://{z}/{x}/{y}{r}.png').addTo(map);
             
+            // Serveur Google Maps : Le plus fiable contre les "carrés blancs"
+            L.tileLayer('https://{s}://{x}&y={y}&z={z}', {
+                subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
+            }).addTo(map);
+
+            // Point de position avec bordure pour visibilité soleil
             marker = L.circleMarker([45.5017, -73.5673], { 
                 color: '#000', fillColor: '#ff3b30', fillOpacity: 1, radius: 10, weight: 3 
             }).addTo(map);
             
-            setTimeout(() => { map.invalidateSize(); }, 500);
-        } catch (e) { console.error(e); }
+            // Correction rendu mobile
+            setTimeout(() => { map.invalidateSize(); }, 600);
+        } catch (e) { alert("Erreur Carte: " + e.message); }
     }
 
     function initGPS() {
-        if (navigator.geolocation) {
+        if ("geolocation" in navigator) {
             navigator.geolocation.watchPosition((p) => {
-                const speedKmh = Math.round((p.coords.speed || 0) * 3.6);
-                const alt = p.coords.altitude ? Math.round(p.coords.altitude) : "--";
                 const lat = p.coords.latitude;
                 const lon = p.coords.longitude;
+                const speed = Math.round((p.coords.speed || 0) * 3.6);
                 const heading = p.coords.heading;
+                const altitude = p.coords.altitude;
 
-                document.getElementById('speed').innerText = speedKmh;
-                document.getElementById('alt').innerText = alt != "--" ? alt + "m" : "--";
-                
-                const curPos = [lat, lon];
-                marker.setLatLng(curPos);
-                map.panTo(curPos);
+                // Mise à jour de l'affichage
+                document.getElementById('speed').innerText = speed;
+                document.getElementById('alt').innerText = altitude ? Math.round(altitude) + "m" : "--";
 
-                // Rotation Boussole
-                if (heading !== null && speedKmh > 2) {
+                const pos = [lat, lon];
+                marker.setLatLng(pos);
+                map.panTo(pos);
+
+                // Rotation "Boussole" (si on bouge à plus de 2 km/h)
+                if (heading !== null && speed > 2) {
                     document.getElementById('map').style.transform = `rotate(${-heading}deg)`;
                 }
 
+                // Calcul distance
                 if (lastPos) {
-                    totalDist += map.distance(lastPos, curPos) / 1000;
+                    let d = map.distance(lastPos, pos);
+                    totalDist += d / 1000;
                     document.getElementById('dist').innerText = totalDist.toFixed(1);
                 }
-                lastPos = curPos;
-            }, (err) => { alert("Erreur GPS: " + err.message); }, { enableHighAccuracy: true });
+                lastPos = pos;
+            }, (err) => {
+                console.error("GPS Error:", err);
+            }, { enableHighAccuracy: true, maximumAge: 0 });
         }
     }
 
     async function getWeather() {
         try {
-            const res = await fetch(`https://openweathermap.org{apiKey}`);
-            const d = await res.json();
-            if(d.main) document.getElementById('temp').innerText = Math.round(d.main.temp) + "°";
-        } catch(e) {}
+            const url = `https://openweathermap.org{apiKey}`;
+            const r = await fetch(url);
+            const d = await r.json();
+            if (d.main) {
+                document.getElementById('temp').innerText = Math.round(d.main.temp) + "°";
+            }
+        } catch (e) { document.getElementById('temp').innerText = "Err"; }
     }
 </script>
 
 </body>
 </html>
+

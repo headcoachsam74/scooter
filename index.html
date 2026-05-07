@@ -3,127 +3,140 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Scooter Pro Dashboard</title>
+    <title>Kaabo Dashboard Pro</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
     <style>
-        body { font-family: 'Arial', sans-serif; margin: 0; background-color: #0b0b0b; color: #fff; overflow: hidden; }
-        #dashboard { height: 100vh; display: flex; flex-direction: column; }
+        body { font-family: 'Inter', Arial, sans-serif; margin: 0; background-color: #000; color: #fff; overflow: hidden; }
         
-        /* Header & Stats */
-        .header { border-bottom: 2px solid #ff0000; padding: 10px; background: #1a1a1a; display: flex; justify-content: space-around; align-items: center; }
-        .stat-item { text-align: center; }
-        .label { font-size: 10px; color: #888; text-transform: uppercase; display: block; }
-        .value { font-size: 24px; font-weight: bold; color: #ff0000; }
+        /* HEADER - Ton design original */
+        .top-section { background: #000; padding: 20px 10px; text-align: center; }
+        .vitesse-container { margin-bottom: 20px; }
+        .vitesse-label { font-size: 10px; color: #555; text-transform: uppercase; letter-spacing: 1px; }
+        .vitesse-value { font-size: 100px; font-weight: 800; color: #ff3b30; line-height: 0.8; margin: 10px 0; }
+        .vitesse-unit { font-size: 14px; color: #555; text-transform: uppercase; }
+
+        .stats-row { display: flex; justify-content: space-between; gap: 10px; padding: 0 10px; }
+        .stat-card { background: #121212; flex: 1; padding: 15px 5px; border-radius: 10px; border: 1px solid #1c1c1c; text-align: center; }
+        .stat-label { font-size: 9px; color: #555; text-transform: uppercase; display: block; margin-bottom: 5px; }
+        .stat-value { font-size: 20px; font-weight: bold; color: #fff; }
+        .stat-sub { font-size: 9px; color: #444; text-transform: uppercase; margin-left: 2px; }
+
+        /* Ligne de séparation rouge fine */
+        .separator { height: 2px; background: #ff3b30; width: 100%; box-shadow: 0 0 10px rgba(255, 59, 48, 0.3); }
 
         /* Carte */
-        #map { flex-grow: 1; width: 100%; border-top: 1px solid #333; }
+        #map { flex-grow: 1; width: 100%; height: calc(100vh - 250px); background: #000; }
 
-        /* Bouton Plein Écran / Start */
+        /* Bouton Start / Overlay */
         #overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.9); display: flex; flex-direction: column;
+            background: #000; display: flex; flex-direction: column;
             justify-content: center; align-items: center; z-index: 9999;
         }
-        button {
-            padding: 15px 30px; font-size: 18px; background: #ff0000; color: white;
-            border: none; border-radius: 50px; cursor: pointer; font-weight: bold;
+        .btn-start {
+            padding: 20px 40px; font-size: 20px; background: #ff3b30; color: white;
+            border: none; border-radius: 10px; cursor: pointer; font-weight: 900; text-transform: uppercase;
         }
     </style>
 </head>
 <body>
 
 <div id="overlay">
-    <h1 style="color: #ff0000; margin-bottom: 20px;">SCOOTER CONNECT</h1>
-    <button onclick="startDashboard()">DÉMARRER LE TRAJET</button>
+    <div class="vitesse-value" style="margin-bottom: 40px;">0</div>
+    <button class="btn-start" onclick="startApp()">Démarrer Kaabo Pro</button>
 </div>
 
-<div id="dashboard">
-    <div class="header">
-        <div class="stat-item">
-            <span class="label">Vitesse</span>
-            <span class="value" id="speed">0</span> <small>km/h</small>
+<div id="main-content">
+    <div class="top-section">
+        <div class="vitesse-container">
+            <div class="vitesse-label">Vitesse</div>
+            <div class="vitesse-value" id="speed">0</div>
+            <div class="vitesse-unit">KM/H</div>
         </div>
-        <div class="stat-item">
-            <span class="label">Distance</span>
-            <span class="value" id="distance">0.00</span> <small>km</small>
-        </div>
-        <div class="stat-item">
-            <span class="label">Météo</span>
-            <span class="value" id="temp">--°C</span>
+
+        <div class="stats-row">
+            <div class="stat-card">
+                <span class="stat-label">Distance</span>
+                <span class="stat-value" id="distance">0.0</span><span class="stat-sub">KM</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Altitude</span>
+                <span class="stat-value" id="altitude">--</span><span class="stat-sub">M</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Météo</span>
+                <span class="stat-value" id="temp">--°</span>
+                <div id="weather-desc" style="font-size: 7px; color: #007aff; text-transform: uppercase; margin-top: 2px;">Chargement...</div>
+            </div>
         </div>
     </div>
+    
+    <div class="separator"></div>
     <div id="map"></div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
-    let map, marker, path;
-    let totalDistance = 0;
-    let lastCoords = null;
+    let map, marker, totalDist = 0, lastPos = null;
     const apiKey = "2363a4d3b8b7a54f0eab1c09d32c8c8e";
 
-    // 1. DÉMARRAGE (Plein écran + GPS)
-    function startDashboard() {
+    function startApp() {
         document.getElementById('overlay').style.display = 'none';
         
-        // Activer le plein écran
-        const doc = document.documentElement;
-        if (doc.requestFullscreen) doc.requestFullscreen();
-        else if (doc.webkitRequestFullscreen) doc.webkitRequestFullscreen();
+        // Plein écran
+        const el = document.documentElement;
+        if (el.requestFullscreen) el.requestFullscreen();
+        else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
 
         initMap();
-        startTracking();
+        initGPS();
         getWeather();
     }
 
-    // 2. INITIALISATION CARTE
     function initMap() {
-        map = L.map('map', { zoomControl: false }).setView([48.8566, 2.3522], 18);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-        marker = L.marker([48.8566, 2.3522]).addTo(map);
-        path = L.polyline([], {color: 'red'}).addTo(map);
+        map = L.map('map', { zoomControl: false, attributionControl: false }).setView([45.5017, -73.5673], 15);
+        // Style de carte sombre (CartoDB Dark Matter)
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
+        marker = L.circleMarker([45.5017, -73.5673], { color: '#ff3b30', radius: 8, fillOpacity: 1 }).addTo(map);
     }
 
-    // 3. TRACKING GPS RÉEL
-    function startTracking() {
-        if ("geolocation" in navigator) {
-            navigator.geolocation.watchPosition((pos) => {
-                const lat = pos.coords.latitude;
-                const lon = pos.coords.longitude;
-                const speedMs = pos.coords.speed || 0; // Vitesse en m/s
-                const speedKmh = Math.round(speedMs * 3.6);
+    function initGPS() {
+        if (navigator.geolocation) {
+            navigator.geolocation.watchPosition((p) => {
+                const lat = p.coords.latitude;
+                const lon = p.coords.longitude;
+                const speedKmh = Math.round((p.coords.speed || 0) * 3.6);
+                const alt = Math.round(p.coords.altitude || 0);
 
-                const newPos = [lat, lon];
-                
-                // Mise à jour affichage
+                // Update UI
                 document.getElementById('speed').innerText = speedKmh;
-                marker.setLatLng(newPos);
-                map.panTo(newPos);
-                path.addLatLng(newPos);
+                document.getElementById('altitude').innerText = alt;
+                
+                const curPos = [lat, lon];
+                marker.setLatLng(curPos);
+                map.panTo(curPos);
 
-                // Calcul distance
-                if (lastCoords) {
-                    const d = map.distance(lastCoords, newPos); // distance en mètres
-                    totalDistance += d / 1000;
-                    document.getElementById('distance').innerText = totalDistance.toFixed(2);
+                if (lastPos) {
+                    const d = map.distance(lastPos, curPos);
+                    totalDist += d / 1000;
+                    document.getElementById('distance').innerText = totalDist.toFixed(1);
                 }
-                lastCoords = newPos;
-
-            }, (err) => { alert("Activez votre GPS !"); }, 
-            { enableHighAccuracy: true });
+                lastPos = curPos;
+            }, null, { enableHighAccuracy: true });
         }
     }
 
-    // 4. MÉTÉO
     async function getWeather() {
         try {
-            const res = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=Paris&appid=${apiKey}&units=metric`);
-            const data = await res.json();
-            document.getElementById('temp').innerText = Math.round(data.main.temp) + "°C";
-        } catch (e) {}
+            // J'utilise "Montreal" par défaut comme c'est marqué "QC" sur ton screenshot
+            const res = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=Montreal&appid=${apiKey}&units=metric&lang=fr`);
+            const d = await res.json();
+            document.getElementById('temp').innerText = Math.round(d.main.temp) + "°";
+            document.getElementById('weather-desc').innerText = d.weather[0].description;
+        } catch(e) {}
     }
 </script>
 

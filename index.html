@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Kaabo Dashboard Pro QC</title>
     
-    <!-- Scripts de secours (CDN alternatif) -->
-    <link rel="stylesheet" href="https://jsdelivr.net" />
-    <script src="https://jsdelivr.net"></script>
+    <!-- Scripts chargés avec priorité -->
+    <link rel="stylesheet" href="https://unpkg.com" />
+    <script src="https://unpkg.com"></script>
     
     <style>
         body { font-family: 'Inter', sans-serif; margin: 0; background: #000; color: #fff; overflow: hidden; height: 100vh; }
@@ -44,7 +44,7 @@
 
 <div id="overlay">
     <img src="logo-kaabo.png" class="logo-start" alt="Kaabo Logo" onerror="this.style.display='none'">
-    <button class="btn-start" onclick="checkAndStart()">Démarrer</button>
+    <button class="btn-start" id="btnAction" onclick="lancer()">Chargement...</button>
 </div>
 
 <div id="main-content">
@@ -68,41 +68,36 @@
     let map, marker, lastPos = null, totalDist = 0;
     const apiKey = "2363a4d3b8b7a54f0eab1c09d32c8c8e";
 
-    function checkAndStart() {
-        if (typeof L === 'undefined') {
-            alert("La carte charge encore ou votre connexion bloque les scripts. Réessayez dans 5 secondes.");
-            location.reload(); // Force le rechargement si Leaflet manque
-            return;
-        }
-        initApp();
-    }
+    // On attend que la page soit prête
+    window.onload = function() {
+        document.getElementById('btnAction').innerText = "DÉMARRER";
+    };
 
-    function initApp() {
+    function lancer() {
         document.getElementById('overlay').style.display = 'none';
         
-        // Plein écran
+        // Mode Plein Écran
         const doc = document.documentElement;
         if (doc.requestFullscreen) doc.requestFullscreen();
         else if (doc.webkitRequestFullscreen) doc.webkitRequestFullscreen();
 
-        // Init Map avec un serveur alternatif (Wikimedia) qui est souvent plus rapide
-        try {
-            map = L.map('map', { zoomControl: false, attributionControl: false }).setView([45.50, -73.56], 16);
-            
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+        // Tentative d'initialisation de la carte
+        if (typeof L !== 'undefined') {
+            try {
+                map = L.map('map', { zoomControl: false, attributionControl: false }).setView([45.5, -73.5], 16);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+                marker = L.circleMarker([45.5, -73.5], { 
+                    color: '#000', fillColor: '#ff3b30', fillOpacity: 1, radius: 10, weight: 3 
+                }).addTo(map);
+                setTimeout(() => { map.invalidateSize(); }, 500);
+            } catch (e) { console.log("Carte ignorée : mode compteur seul."); }
+        }
 
-            marker = L.circleMarker([45.50, -73.56], { 
-                color: '#000', fillColor: '#ff3b30', fillOpacity: 1, radius: 10, weight: 3 
-            }).addTo(map);
-            
-            setTimeout(() => { map.invalidateSize(); }, 600);
-        } catch (e) { console.error(e); }
-
-        initGPS();
+        demarrerGPS();
         getWeather();
     }
 
-    function initGPS() {
+    function demarrerGPS() {
         if ("geolocation" in navigator) {
             navigator.geolocation.watchPosition((p) => {
                 const lat = p.coords.latitude;
@@ -113,23 +108,20 @@
                 document.getElementById('speed').innerText = speed;
                 document.getElementById('alt').innerText = p.coords.altitude ? Math.round(p.coords.altitude) + "m" : "--";
 
-                const pos = [lat, lon];
-                marker.setLatLng(pos);
-                map.panTo(pos);
-
-                if (heading !== null && speed > 2) {
-                    document.getElementById('map').style.transform = `rotate(${-heading}deg)`;
+                if (map && marker) {
+                    const pos = [lat, lon];
+                    marker.setLatLng(pos);
+                    map.panTo(pos);
+                    if (heading !== null && speed > 2) {
+                        document.getElementById('map').style.transform = `rotate(${-heading}deg)`;
+                    }
+                    if (lastPos) {
+                        totalDist += map.distance(lastPos, pos) / 1000;
+                        document.getElementById('dist').innerText = totalDist.toFixed(1);
+                    }
+                    lastPos = pos;
                 }
-
-                if (lastPos) {
-                    let d = map.distance(lastPos, pos);
-                    totalDist += d / 1000;
-                    document.getElementById('dist').innerText = totalDist.toFixed(1);
-                }
-                lastPos = pos;
-            }, (err) => {
-                alert("GPS Error: " + err.message);
-            }, { enableHighAccuracy: true, maximumAge: 0 });
+            }, (err) => { alert("GPS : " + err.message); }, { enableHighAccuracy: true });
         }
     }
 

@@ -125,24 +125,31 @@
     }
 
     function initMap() {
-        try {
-            // Initialisation centrée par défaut
-            map = L.map('map', { zoomControl: false, attributionControl: false }).setView([45.5017, -73.5673], 17);
-            
-            // Serveur Google Maps : Le plus fiable contre les "carrés blancs"
-            L.tileLayer('https://{s}://{x}&y={y}&z={z}', {
-                subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
-            }).addTo(map);
+    try {
+        // Initialisation avec options de performance
+        map = L.map('map', { 
+            zoomControl: false, 
+            attributionControl: false,
+            preferCanvas: true // Plus rapide sur mobile
+        }).setView([45.5017, -73.5673], 17);
+        
+        // Serveur OpenStreetMap France (Très fiable, contraste élevé pour le soleil)
+        L.tileLayer('https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png', {
+            maxZoom: 20
+        }).addTo(map);
 
-            // Point de position avec bordure pour visibilité soleil
-            marker = L.circleMarker([45.5017, -73.5673], { 
-                color: '#000', fillColor: '#ff3b30', fillOpacity: 1, radius: 10, weight: 3 
-            }).addTo(map);
-            
-            // Correction rendu mobile
-            setTimeout(() => { map.invalidateSize(); }, 600);
-        } catch (e) { alert("Erreur Carte: " + e.message); }
-    }
+        marker = L.circleMarker([45.5017, -73.5673], { 
+            color: '#000', fillColor: '#ff3b30', fillOpacity: 1, radius: 10, weight: 3 
+        }).addTo(map);
+        
+        // Forçage immédiat du rendu pour éviter le gris
+        setTimeout(() => { 
+            map.invalidateSize(true);
+        }, 300);
+        
+    } catch (e) { alert("Erreur Carte: " + e.message); }
+}
+
 
     function initGPS() {
         if ("geolocation" in navigator) {

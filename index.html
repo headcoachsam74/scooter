@@ -3,47 +3,93 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Kaabo Dashboard Pro</title>
+    <title>Kaabo Pro Dashboard</title>
+    
     <script src="https://mapbox.com"></script>
     <link href="https://mapbox.com" rel="stylesheet" />
+    
     <style>
-        body { margin: 0; padding: 0; background: #000; font-family: sans-serif; overflow: hidden; }
+        body { margin: 0; padding: 0; background: #000; font-family: 'Arial Black', sans-serif; overflow: hidden; }
         #map { height: 100vh; width: 100vw; position: absolute; top: 0; }
-        .widget { position: absolute; z-index: 10; background: rgba(255,255,255,0.85); backdrop-filter: blur(8px); padding: 10px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
         
-        /* Bloc Vitesse + Logo */
-        #speed-block { display: flex; flex-direction: column; align-items: center; min-width: 100px; }
-        #logo-kaabo { width: 70px; margin-bottom: 5px; }
-        #speed-val { font-size: 42px; font-weight: 900; color: #ff0000; line-height: 1; }
+        /* Widgets */
+        .widget {
+            position: absolute; z-index: 10; background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(8px); padding: 10px; border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.4);
+            text-align: center;
+        }
 
-        /* Adaptatif Portrait/Paysage */
+        /* BLOC VITESSE + LOGO (Regroupés) */
+        #speed-block {
+            display: flex; flex-direction: column; align-items: center; gap: 5px;
+            min-width: 120px;
+        }
+        #logo-kaabo { width: 80px; height: auto; display: block; margin-bottom: 5px; }
+        #speed-val { font-size: 48px; font-weight: 900; color: #ff0000; line-height: 0.9; }
+        .unit { font-size: 12px; color: #333; font-weight: 800; }
+
+        /* Adaptatif selon orientation */
         @media (orientation: portrait) {
-            #speed-block-wrap { top: 20px; left: 50%; transform: translateX(-50%); }
+            #main-dash { top: 20px; left: 50%; transform: translateX(-50%); }
             #weather { top: 20px; left: 15px; }
+            #elevation { bottom: 100px; left: 15px; }
         }
         @media (orientation: landscape) {
-            #speed-block-wrap { top: 15px; right: 15px; }
+            #main-dash { top: 15px; right: 15px; }
             #weather { top: 15px; left: 15px; }
+            #elevation { bottom: 25px; left: 15px; }
         }
 
-        #start-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        #recenter-btn { position: absolute; bottom: 30px; right: 20px; z-index: 20; width: 60px; height: 60px; background: #ff0000; border: 2px solid #fff; border-radius: 50%; font-size: 24px; color: #fff; }
-        .nav-arrow { width: 0; height: 0; border-left: 10px solid transparent; border-right: 10px solid transparent; border-bottom: 20px solid #ff0000; }
+        /* Bouton Start */
+        #start-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; z-index: 1000; display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+        }
+        #start-btn {
+            padding: 20px 40px; background: #ff0000; color: white;
+            border: none; border-radius: 5px; font-size: 20px; font-weight: bold;
+            box-shadow: 0 0 20px rgba(255,0,0,0.5); cursor: pointer;
+        }
+
+        #recenter-btn {
+            position: absolute; bottom: 25px; right: 20px; z-index: 20;
+            width: 60px; height: 60px; background: #ff0000; border: 2px solid white;
+            border-radius: 50%; color: white; font-size: 26px; cursor: pointer;
+        }
+
+        .nav-arrow {
+            width: 0; height: 0; border-left: 10px solid transparent;
+            border-right: 10px solid transparent; border-bottom: 20px solid #ff0000;
+        }
     </style>
 </head>
 <body>
+
     <div id="start-screen">
-        <h1 style="color:white; font-style:italic; letter-spacing:8px;">KAABO</h1>
-        <button style="padding:20px 40px; background:#ff0000; color:white; border:none; font-weight:bold; border-radius:5px;" onclick="startApp()">DÉMARRER LE GPS</button>
+        <h1 style="color:white; font-style: italic; letter-spacing: 10px; margin-bottom:30px;">KAABO</h1>
+        <button id="start-btn" onclick="startApp()">DÉMARRER</button>
     </div>
 
-    <div id="weather" class="widget"><span id="temp-val">--</span>°C</div>
-    <div id="speed-block-wrap" class="widget">
+    <!-- Météo -->
+    <div id="weather" class="widget">
+        <span style="font-size: 20px;">☀️</span> <span id="temp-val">--</span>°C
+    </div>
+
+    <!-- Dashboard Principal (Logo + Vitesse) -->
+    <div id="main-dash" class="widget">
         <div id="speed-block">
-            <img src="logo-kaboo.png" id="logo-kaabo" onerror="this.style.display='none'">
+            <img src="logo-kaboo.png" id="logo-kaabo" alt="Logo" onerror="this.src='https://placeholder.com'">
             <span id="speed-val">0</span>
-            <span style="font-size:10px; color:#333; font-weight:bold;">KM/H</span>
+            <span class="unit">KM/H</span>
         </div>
+    </div>
+
+    <!-- Élévation -->
+    <div id="elevation" class="widget">
+        <span style="font-size: 10px; color:#666; display:block;">ALTITUDE</span>
+        <span id="alt-val">--</span> m
     </div>
 
     <button id="recenter-btn" onclick="recenter()">🎯</button>
@@ -52,10 +98,11 @@
     <script>
         let userPos = [2.3522, 48.8566];
         let isLocked = true;
+
         const map = new mapboxgl.Map({
             container: 'map',
             style: 'https://cartocdn.com', 
-            center: userPos, zoom: 17, pitch: 65, antialias: true
+            center: userPos, zoom: 17, pitch: 65, bearing: 0, antialias: true
         });
 
         const el = document.createElement('div');
@@ -70,19 +117,39 @@
         }
 
         function run() {
-            window.addEventListener('deviceorientation', e => {
+            window.addEventListener('deviceorientation', (e) => {
                 let h = e.webkitCompassHeading || (360 - e.alpha);
                 if (h && isLocked) map.setBearing(h);
             });
-            navigator.geolocation.watchPosition(p => {
+
+            navigator.geolocation.watchPosition((p) => {
                 userPos = [p.coords.longitude, p.coords.latitude];
                 marker.setLngLat(userPos);
                 if (isLocked) map.easeTo({ center: userPos, duration: 600 });
+                
                 document.getElementById('speed-val').innerText = Math.round((p.coords.speed || 0) * 3.6);
+                if (p.coords.altitude !== null) {
+                    document.getElementById('alt-val').innerText = Math.round(p.coords.altitude);
+                }
             }, null, { enableHighAccuracy: true });
+
+            fetchWeather();
         }
 
-        function recenter() { isLocked = true; map.resize(); map.easeTo({ center: userPos, zoom: 17, pitch: 65 }); }
+        async function fetchWeather() {
+            try {
+                const res = await fetch(`https://open-meteo.com{userPos}&longitude=${userPos}&current_weather=true`);
+                const data = await res.json();
+                document.getElementById('temp-val').innerText = Math.round(data.current_weather.temperature);
+            } catch (e) { document.getElementById('temp-val').innerText = "??"; }
+        }
+
+        function recenter() {
+            isLocked = true;
+            map.resize();
+            map.easeTo({ center: userPos, zoom: 17, pitch: 65, duration: 800 });
+        }
+
         map.on('dragstart', () => isLocked = false);
         window.addEventListener('resize', () => map.resize());
     </script>

@@ -3,126 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Kaabo Dashboard Pro - Smart Night Mode</title>
-    
+    <title>Kaabo Smart Dashboard Pro</title>
     <style>
         * { box-sizing: border-box; }
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; font-family: 'Arial Black', sans-serif; overflow: hidden; }
         #map { position: absolute; top: 0; bottom: 0; width: 100%; z-index: 1; }
-        
-        /* Écran de démarrage */
-        #start-screen {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #000; z-index: 2000; 
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-        }
-        #logo-start { width: 180px; height: auto; margin-bottom: 40px; }
-        #start-btn {
-            padding: 20px 50px; background: #ff0000; color: white;
-            border: none; border-radius: 5px; font-size: 20px; font-weight: bold;
-            box-shadow: 0 0 25px rgba(255,0,0,0.6); cursor: pointer; text-transform: uppercase;
-        }
-
-        /* Widgets avec flou adaptatif (clair ou sombre) */
-        .widget {
-            position: absolute; z-index: 10; padding: 10px; border-radius: 15px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3); text-align: center;
-            transition: all 0.3s ease;
-        }
-
-        /* Thèmes widgets */
-        .light-widget { background: rgba(255, 255, 255, 0.9); color: #000; border: 1px solid rgba(255,255,255,0.4); }
-        .dark-widget { background: rgba(30, 30, 30, 0.9); color: #fff; border: 1px solid rgba(255,0,0,0.3); }
-
-        #main-dash { min-width: 140px; display: flex; flex-direction: column; align-items: center; gap: 5px; }
-        #logo-kaabo { width: 85px; height: auto; }
+        #start-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 2000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        #start-btn { padding: 20px 50px; background: #ff0000; color: white; border: none; border-radius: 5px; font-size: 20px; font-weight: bold; box-shadow: 0 0 25px rgba(255,0,0,0.6); cursor: pointer; }
+        .widget { position: absolute; z-index: 10; background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(8px); padding: 10px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.4); text-align: center; transition: all 0.3s ease; }
+        .dark-widget { background: rgba(30, 30, 30, 0.9) !important; color: #fff !important; border: 1px solid rgba(255,0,0,0.3) !important; }
+        #main-dash { min-width: 130px; display: flex; flex-direction: column; align-items: center; gap: 5px; }
         #speed-val { font-size: 50px; font-weight: 900; color: #ff0000; line-height: 0.9; }
-
-        @media (orientation: portrait) {
-            #main-dash { top: 20px; left: 50%; transform: translateX(-50%); }
-            #weather { top: 20px; left: 15px; }
-            #elevation { bottom: 110px; left: 15px; }
-        }
-        @media (orientation: landscape) {
-            #main-dash { top: 15px; right: 15px; }
-            #weather { top: 15px; left: 15px; }
-            #elevation { bottom: 25px; left: 15px; }
-        }
-
-        #recenter-btn {
-            position: absolute; bottom: 30px; right: 20px; z-index: 20;
-            width: 65px; height: 65px; background: #ff0000; border: 2px solid white;
-            border-radius: 50%; color: white; font-size: 28px; cursor: pointer;
-        }
+        @media (orientation: portrait) { #main-dash { top: 20px; left: 50%; transform: translateX(-50%); } #weather { top: 20px; left: 15px; } #elevation { bottom: 110px; left: 15px; } }
+        @media (orientation: landscape) { #main-dash { top: 15px; right: 15px; } #weather { top: 15px; left: 15px; } #elevation { bottom: 25px; left: 15px; } }
+        #recenter-btn { position: absolute; bottom: 30px; right: 20px; z-index: 20; width: 65px; height: 65px; background: #ff0000; border: 2px solid white; border-radius: 50%; color: white; font-size: 28px; cursor: pointer; }
     </style>
 </head>
 <body>
-
     <div id="start-screen">
-        <img src="logo-kaboo.png" id="logo-start" alt="Kaabo Logo" onerror="this.style.display='none'">
+        <img src="logo-kaboo.png" style="width:180px; margin-bottom:40px;" onerror="this.style.display='none'">
         <button id="start-btn" onclick="startApp()">DÉMARRER</button>
     </div>
-
     <div id="weather" class="widget">☀️ <span id="temp-val">--</span>°C</div>
-
     <div id="main-dash" class="widget">
-        <img src="logo-kaboo.png" id="logo-kaabo" alt="Logo" onerror="this.style.display='none'">
+        <img src="logo-kaboo.png" style="width:80px; margin-bottom:5px;" onerror="this.style.display='none'">
         <span id="speed-val">0</span>
         <span style="font-size: 11px; font-weight: 800;">KM/H</span>
     </div>
-
-    <div id="elevation" class="widget">
-        <span style="font-size: 9px; display:block; font-weight: bold; opacity: 0.7;">ALTITUDE</span>
-        <span id="alt-val">--</span> m
-    </div>
-
+    <div id="elevation" class="widget"><span style="font-size: 9px; display:block; font-weight: bold; opacity: 0.7;">ALTITUDE</span><span id="alt-val">--</span> m</div>
     <button id="recenter-btn" onclick="recenter()">🎯</button>
     <div id="map"></div>
 
     <script>
-        let map, marker;
-        let userPos = { lat: 48.8566, lng: 2.3522 };
-        let isLocked = true;
-
-        // Détection automatique du mode nuit (20h - 07h)
+        let map, marker, userPos = { lat: 48.8566, lng: 2.3522 }, isLocked = true;
         const hour = new Date().getHours();
         const isNight = hour >= 20 || hour < 7;
 
         function initMap() {
-            // Appliquer le thème aux widgets
             const widgets = document.querySelectorAll('.widget');
-            widgets.forEach(w => w.classList.add(isNight ? 'dark-widget' : 'light-widget'));
-
+            if (isNight) widgets.forEach(w => w.classList.add('dark-widget'));
             map = new google.maps.Map(document.getElementById("map"), {
-                center: userPos,
-                zoom: 19,
-                heading: 0,
-                tilt: 65,
-                mapId: "90f87356969d889", 
-                disableDefaultUI: true,
-                gestureHandling: "greedy",
-                // Si pas de Map ID configuré en clair, on force le style JSON
-                styles: isNight ? [
-                    { "elementType": "geometry", "stylers": [{ "color": "#242f3e" }] },
-                    { "elementType": "labels.text.fill", "stylers": [{ "color": "#746855" }] },
-                    { "featureType": "road", "elementType": "geometry", "stylers": [{ "color": "#38414e" }] }
-                ] : []
+                center: userPos, zoom: 19, heading: 0, tilt: 65, mapId: "90f87356969d889", disableDefaultUI: true, gestureHandling: "greedy",
+                styles: isNight ? [{ "elementType": "geometry", "stylers": [{ "color": "#242f3e" }] }, { "elementType": "labels.text.fill", "stylers": [{ "color": "#746855" }] }, { "featureType": "road", "elementType": "geometry", "stylers": [{ "color": "#38414e" }] }] : []
             });
-
-            marker = new google.maps.Marker({
-                position: userPos,
-                map: map,
-                icon: {
-                    path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
-                    scale: 8,
-                    fillColor: "#ff0000",
-                    fillOpacity: 1,
-                    strokeWeight: 2,
-                    strokeColor: "#ffffff",
-                    rotation: 0
-                }
-            });
-
+            marker = new google.maps.Marker({ position: userPos, map: map, icon: { path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW, scale: 8, fillColor: "#ff0000", fillOpacity: 1, strokeWeight: 2, strokeColor: "#ffffff", rotation: 0 } });
             map.addListener('dragstart', () => { isLocked = false; });
         }
 
@@ -130,26 +54,17 @@
             const doc = document.documentElement;
             if (doc.requestFullscreen) doc.requestFullscreen();
             else if (doc.webkitRequestFullscreen) doc.webkitRequestFullscreen();
-
             if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
                 const res = await DeviceOrientationEvent.requestPermission();
                 if (res === 'granted') window.addEventListener('deviceorientation', handleRotation, true);
-            } else {
-                window.addEventListener('deviceorientation', handleRotation, true);
-            }
-
+            } else { window.addEventListener('deviceorientation', handleRotation, true); }
             document.getElementById('start-screen').style.display = 'none';
             activateGPS();
         }
 
         function handleRotation(e) {
             let heading = e.webkitCompassHeading || (360 - e.alpha);
-            if (heading && isLocked && map) {
-                map.setHeading(heading);
-                const icon = marker.getIcon();
-                icon.rotation = heading;
-                marker.setIcon(icon);
-            }
+            if (heading && isLocked && map) { map.setHeading(heading); const icon = marker.getIcon(); icon.rotation = heading; marker.setIcon(icon); }
         }
 
         function activateGPS() {
@@ -170,16 +85,8 @@
                 document.getElementById('temp-val').innerText = Math.round(data.current_weather.temperature);
             } catch (e) {}
         }
-
-        function recenter() {
-            isLocked = true;
-            map.setCenter(userPos);
-            map.setZoom(19);
-            map.setTilt(65);
-        }
+        function recenter() { isLocked = true; map.setCenter(userPos); map.setZoom(19); map.setTilt(65); }
     </script>
-    
-    <!-- TA CLÉ API INTÉGRÉE ICI -->
     <script src="https://googleapis.com" async defer></script>
 </body>
 </html>

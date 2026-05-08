@@ -5,14 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Kaabo Dashboard Final</title>
     
-    <!-- Bibliothèques MapLibre CORRIGÉES (Liens 2026 valides) -->
+    <!-- Bibliothèques MapLibre (Liens officiels complets) -->
     <script src="https://unpkg.com"></script>
     <link href="https://unpkg.com" rel="stylesheet" />
     
     <style>
         * { box-sizing: border-box; }
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; font-family: sans-serif; overflow: hidden; }
-        #map { position: absolute; top: 0; bottom: 0; width: 100%; z-index: 1; background: #eee; }
+        #map { position: absolute; top: 0; bottom: 0; width: 100%; z-index: 1; background: #222; }
         
         /* Écran de démarrage */
         #start-screen {
@@ -28,6 +28,7 @@
         .widget {
             position: absolute; z-index: 10; background: rgba(255, 255, 255, 0.9);
             backdrop-filter: blur(8px); padding: 10px; border-radius: 15px; text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.4);
         }
 
         #main-dash { min-width: 130px; display: flex; flex-direction: column; align-items: center; }
@@ -64,7 +65,7 @@
         <span id="speed-val">0</span>
         <span style="font-size: 11px; font-weight: bold;">KM/H</span>
     </div>
-    <div id="elevation" class="widget"><span style="font-size: 9px; color:#666; display:block;">ALTITUDE</span><span id="alt-val">--</span> m</div>
+    <div id="elevation" class="widget"><span style="font-size: 9px; color:#666; display:block; font-weight: bold;">ALTITUDE</span><span id="alt-val">--</span> m</div>
 
     <button id="recenter-btn" onclick="recenter()">🎯</button>
     <div id="map"></div>
@@ -75,7 +76,7 @@
 
         const map = new maplibregl.Map({
             container: 'map',
-            style: 'https://cartocdn.com', 
+            style: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json', 
             center: userPos, zoom: 17, pitch: 65, bearing: 0, antialias: true
         });
 
@@ -83,12 +84,12 @@
         const marker = new maplibregl.Marker({element: el}).setLngLat(userPos).addTo(map);
 
         async function startApp() {
-            // Force Plein Écran (avec préfixes navigateurs)
             const doc = document.documentElement;
-            const requestFS = doc.requestFullscreen || doc.webkitRequestFullscreen || doc.mozRequestFullScreen || doc.msRequestFullscreen;
-            if (requestFS) requestFS.call(doc).catch(e => console.log("Plein écran bloqué"));
+            try {
+                if (doc.requestFullscreen) doc.requestFullscreen();
+                else if (doc.webkitRequestFullscreen) doc.webkitRequestFullscreen();
+            } catch(e) {}
 
-            // Demande Permissions Capteurs
             if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
                 const res = await DeviceOrientationEvent.requestPermission();
                 if (res === 'granted') window.addEventListener('deviceorientation', handleRotation, true);
@@ -119,7 +120,7 @@
 
         async function fetchWeather() {
             try {
-                const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${userPos[1]}&longitude=${userPos[0]}&current_weather=true`);
+                const res = await fetch(`https://open-meteo.com{userPos[1]}&longitude=${userPos[0]}&current_weather=true`);
                 const data = await res.json();
                 document.getElementById('temp-val').innerText = Math.round(data.current_weather.temperature);
             } catch (e) {}
@@ -131,4 +132,3 @@
     </script>
 </body>
 </html>
-

@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Kaabo Google Dashboard Pro</title>
+    <title>Kaabo Smart Dashboard</title>
     
     <style>
         * { box-sizing: border-box; }
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; font-family: 'Arial Black', sans-serif; overflow: hidden; }
         #map { position: absolute; top: 0; bottom: 0; width: 100%; z-index: 1; }
         
-        /* Écran de démarrage Plein Écran */
+        /* Écran de démarrage Noir avec Logo */
         #start-screen {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: #000; z-index: 2000; 
@@ -31,11 +31,12 @@
             text-align: center;
         }
 
-        /* Bloc Vitesse + Logo */
+        /* Dashboard Vitesse + Logo Kaabo */
         #main-dash { min-width: 130px; display: flex; flex-direction: column; align-items: center; gap: 5px; }
         #logo-kaabo { width: 80px; height: auto; }
         #speed-val { font-size: 50px; font-weight: 900; color: #ff0000; line-height: 0.9; }
 
+        /* Adaptatif Portrait / Paysage */
         @media (orientation: portrait) {
             #main-dash { top: 20px; left: 50%; transform: translateX(-50%); }
             #weather { top: 20px; left: 15px; }
@@ -58,7 +59,7 @@
 
     <div id="start-screen">
         <img src="logo-kaboo.png" id="logo-start" alt="Kaabo Logo" onerror="this.style.display='none'">
-        <button id="start-btn" onclick="startApp()">DÉMARRER</button>
+        <button id="start-btn" onclick="startApp()">DÉMARRER LE GPS</button>
     </div>
 
     <div id="weather" class="widget">☀️ <span id="temp-val">--</span>°C</div>
@@ -83,8 +84,8 @@
         let userPos = { lat: 48.8566, lng: 2.3522 };
         let isLocked = true;
 
+        // 1. Initialisation de Google Maps
         function initMap() {
-            // Configuration Google Maps avec ton Map ID pour la 3D/Rotation
             map = new google.maps.Map(document.getElementById("map"), {
                 center: userPos,
                 zoom: 19,
@@ -92,13 +93,10 @@
                 tilt: 60,
                 mapId: "90f87356969d889", 
                 disableDefaultUI: true,
-                gestureHandling: "greedy",
-                styles: [
-                    { "featureType": "poi", "stylers": [{ "visibility": "off" }] } // Épurer la carte
-                ]
+                gestureHandling: "greedy"
             });
 
-            // Flèche personnalisée
+            // Flèche de navigation rouge
             marker = new google.maps.Marker({
                 position: userPos,
                 map: map,
@@ -116,13 +114,14 @@
             map.addListener('dragstart', () => { isLocked = false; });
         }
 
+        // 2. Lancement au clic sur Démarrer
         async function startApp() {
-            // Force Plein écran
+            // Activation Plein Écran
             const doc = document.documentElement;
             if (doc.requestFullscreen) doc.requestFullscreen();
             else if (doc.webkitRequestFullscreen) doc.webkitRequestFullscreen();
 
-            // Autorisations Boussole (iOS/Android)
+            // Demande Permissions Boussole (iOS)
             if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
                 const res = await DeviceOrientationEvent.requestPermission();
                 if (res === 'granted') window.addEventListener('deviceorientation', handleRotation, true);
@@ -134,6 +133,7 @@
             activateGPS();
         }
 
+        // 3. Gestion de la rotation (Boussole)
         function handleRotation(e) {
             let heading = e.webkitCompassHeading || (360 - e.alpha);
             if (heading && isLocked && map) {
@@ -144,6 +144,7 @@
             }
         }
 
+        // 4. Suivi GPS (Position, Vitesse, Altitude)
         function activateGPS() {
             navigator.geolocation.watchPosition((p) => {
                 userPos = { lat: p.coords.latitude, lng: p.coords.longitude };
@@ -151,7 +152,10 @@
                 
                 if (isLocked) map.setCenter(userPos);
                 
+                // Vitesse
                 document.getElementById('speed-val').innerText = Math.round((p.coords.speed || 0) * 3.6);
+                
+                // Altitude
                 if (p.coords.altitude !== null) {
                     document.getElementById('alt-val').innerText = Math.round(p.coords.altitude);
                 }
@@ -159,6 +163,7 @@
             }, null, { enableHighAccuracy: true });
         }
 
+        // 5. Météo Dynamique
         async function fetchWeather() {
             try {
                 const res = await fetch(`https://open-meteo.com{userPos.lat}&longitude=${userPos.lng}&current_weather=true`);
@@ -167,6 +172,7 @@
             } catch (e) {}
         }
 
+        // 6. Recentrer la carte
         function recenter() {
             isLocked = true;
             map.setCenter(userPos);
@@ -175,7 +181,7 @@
         }
     </script>
     
-    <!-- Script Google Maps avec tes identifiants -->
+    <!-- Script Google Maps avec Ta Clé API et ton Map ID -->
     <script src="https://googleapis.com" async defer></script>
 </body>
 </html>

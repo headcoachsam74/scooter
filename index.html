@@ -3,15 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Kaabo Pro Dashboard</title>
+    <title>Kaabo Dashboard Fullscreen</title>
     
-    <script src="https://mapbox.com"></script>
-    <link href="https://mapbox.com" rel="stylesheet" />
+    <script src="https://unpkg.com"></script>
+    <link href="https://unpkg.com" rel="stylesheet" />
     
     <style>
-        body { margin: 0; padding: 0; background: #000; font-family: 'Arial Black', sans-serif; overflow: hidden; }
-        #map { height: 100vh; width: 100vw; position: absolute; top: 0; }
+        * { box-sizing: border-box; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; font-family: 'Arial Black', sans-serif; overflow: hidden; }
         
+        #map { position: absolute; top: 0; bottom: 0; width: 100%; z-index: 1; }
+        
+        /* Écran de démarrage Plein Écran */
+        #start-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; z-index: 2000; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+        #logo-start { width: 180px; height: auto; margin-bottom: 40px; }
+        #start-btn {
+            padding: 20px 50px; background: #ff0000; color: white;
+            border: none; border-radius: 5px; font-size: 20px; font-weight: bold;
+            box-shadow: 0 0 25px rgba(255,0,0,0.6); cursor: pointer; text-transform: uppercase;
+        }
+
         /* Widgets */
         .widget {
             position: absolute; z-index: 10; background: rgba(255, 255, 255, 0.9);
@@ -20,20 +35,15 @@
             text-align: center;
         }
 
-        /* BLOC VITESSE + LOGO (Regroupés) */
-        #speed-block {
-            display: flex; flex-direction: column; align-items: center; gap: 5px;
-            min-width: 120px;
-        }
-        #logo-kaabo { width: 80px; height: auto; display: block; margin-bottom: 5px; }
-        #speed-val { font-size: 48px; font-weight: 900; color: #ff0000; line-height: 0.9; }
-        .unit { font-size: 12px; color: #333; font-weight: 800; }
+        /* Bloc Vitesse + Logo */
+        #main-dash { min-width: 130px; display: flex; flex-direction: column; align-items: center; gap: 5px; }
+        #logo-kaabo { width: 80px; height: auto; }
+        #speed-val { font-size: 50px; font-weight: 900; color: #ff0000; line-height: 0.9; }
 
-        /* Adaptatif selon orientation */
         @media (orientation: portrait) {
             #main-dash { top: 20px; left: 50%; transform: translateX(-50%); }
             #weather { top: 20px; left: 15px; }
-            #elevation { bottom: 100px; left: 15px; }
+            #elevation { bottom: 110px; left: 15px; }
         }
         @media (orientation: landscape) {
             #main-dash { top: 15px; right: 15px; }
@@ -41,54 +51,32 @@
             #elevation { bottom: 25px; left: 15px; }
         }
 
-        /* Bouton Start */
-        #start-screen {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #000; z-index: 1000; display: flex; flex-direction: column;
-            align-items: center; justify-content: center;
-        }
-        #start-btn {
-            padding: 20px 40px; background: #ff0000; color: white;
-            border: none; border-radius: 5px; font-size: 20px; font-weight: bold;
-            box-shadow: 0 0 20px rgba(255,0,0,0.5); cursor: pointer;
-        }
-
         #recenter-btn {
-            position: absolute; bottom: 25px; right: 20px; z-index: 20;
-            width: 60px; height: 60px; background: #ff0000; border: 2px solid white;
-            border-radius: 50%; color: white; font-size: 26px; cursor: pointer;
+            position: absolute; bottom: 30px; right: 20px; z-index: 20;
+            width: 65px; height: 65px; background: #ff0000; border: 2px solid white;
+            border-radius: 50%; color: white; font-size: 28px; cursor: pointer;
         }
 
-        .nav-arrow {
-            width: 0; height: 0; border-left: 10px solid transparent;
-            border-right: 10px solid transparent; border-bottom: 20px solid #ff0000;
-        }
+        .nav-arrow { width: 0; height: 0; border-left: 10px solid transparent; border-right: 10px solid transparent; border-bottom: 22px solid #ff0000; }
     </style>
 </head>
 <body>
 
     <div id="start-screen">
-        <h1 style="color:white; font-style: italic; letter-spacing: 10px; margin-bottom:30px;">KAABO</h1>
+        <img src="logo-kaboo.png" id="logo-start" alt="Kaabo Logo" onerror="this.style.display='none'">
         <button id="start-btn" onclick="startApp()">DÉMARRER</button>
     </div>
 
-    <!-- Météo -->
-    <div id="weather" class="widget">
-        <span style="font-size: 20px;">☀️</span> <span id="temp-val">--</span>°C
-    </div>
+    <div id="weather" class="widget">☀️ <span id="temp-val">--</span>°C</div>
 
-    <!-- Dashboard Principal (Logo + Vitesse) -->
     <div id="main-dash" class="widget">
-        <div id="speed-block">
-            <img src="logo-kaboo.png" id="logo-kaabo" alt="Logo" onerror="this.src='https://placeholder.com'">
-            <span id="speed-val">0</span>
-            <span class="unit">KM/H</span>
-        </div>
+        <img src="logo-kaboo.png" id="logo-kaabo" alt="Logo" onerror="this.style.display='none'">
+        <span id="speed-val">0</span>
+        <span style="font-size: 11px; font-weight: 800;">KM/H</span>
     </div>
 
-    <!-- Élévation -->
     <div id="elevation" class="widget">
-        <span style="font-size: 10px; color:#666; display:block;">ALTITUDE</span>
+        <span style="font-size: 9px; color:#666; display:block; font-weight: bold;">ALTITUDE</span>
         <span id="alt-val">--</span> m
     </div>
 
@@ -99,7 +87,7 @@
         let userPos = [2.3522, 48.8566];
         let isLocked = true;
 
-        const map = new mapboxgl.Map({
+        const map = new maplibregl.Map({
             container: 'map',
             style: 'https://cartocdn.com', 
             center: userPos, zoom: 17, pitch: 65, bearing: 0, antialias: true
@@ -107,13 +95,21 @@
 
         const el = document.createElement('div');
         el.className = 'nav-arrow';
-        const marker = new mapboxgl.Marker(el).setLngLat(userPos).addTo(map);
+        const marker = new maplibregl.Marker({element: el}).setLngLat(userPos).addTo(map);
 
         function startApp() {
+            // Demande le mode plein écran
+            const doc = window.document.documentElement;
+            if (doc.requestFullscreen) doc.requestFullscreen();
+            else if (doc.webkitRequestFullscreen) doc.webkitRequestFullscreen();
+
+            // Permissions Capteurs
             if (typeof DeviceOrientationEvent.requestPermission === 'function') {
                 DeviceOrientationEvent.requestPermission().then(s => { if(s === 'granted') run(); });
             } else { run(); }
+            
             document.getElementById('start-screen').style.display = 'none';
+            map.resize();
         }
 
         function run() {
@@ -128,9 +124,7 @@
                 if (isLocked) map.easeTo({ center: userPos, duration: 600 });
                 
                 document.getElementById('speed-val').innerText = Math.round((p.coords.speed || 0) * 3.6);
-                if (p.coords.altitude !== null) {
-                    document.getElementById('alt-val').innerText = Math.round(p.coords.altitude);
-                }
+                if (p.coords.altitude !== null) document.getElementById('alt-val').innerText = Math.round(p.coords.altitude);
             }, null, { enableHighAccuracy: true });
 
             fetchWeather();
@@ -141,7 +135,7 @@
                 const res = await fetch(`https://open-meteo.com{userPos}&longitude=${userPos}&current_weather=true`);
                 const data = await res.json();
                 document.getElementById('temp-val').innerText = Math.round(data.current_weather.temperature);
-            } catch (e) { document.getElementById('temp-val').innerText = "??"; }
+            } catch (e) {}
         }
 
         function recenter() {

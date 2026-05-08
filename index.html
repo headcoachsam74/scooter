@@ -2,165 +2,135 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Kaabo Dashboard Light</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>GPS Trotinette - Smart Mode</title>
+    
+    <script src="https://mapbox.com"></script>
+    <link href="https://mapbox.com" rel="stylesheet" />
     
     <style>
-        * { box-sizing: border-box; }
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #f0f2f5; font-family: 'Arial Black', sans-serif; overflow: hidden; }
-        #map { position: absolute; top: 0; bottom: 0; width: 100%; z-index: 1; background: #ffffff; }
+        body { margin: 0; padding: 0; background: #1a1a1a; font-family: sans-serif; overflow: hidden; }
+        #map { height: 100vh; width: 100vw; }
         
         #start-screen {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #000; z-index: 2000; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: #f8f9fa; z-index: 100;
+            display: flex; align-items: center; justify-content: center;
         }
         #start-btn {
-            padding: 20px 50px; background: #ff0000; color: white; border: none; border-radius: 5px;
-            font-size: 20px; font-weight: bold; cursor: pointer; box-shadow: 0 0 20px rgba(255,0,0,0.5);
+            padding: 20px 40px; background: #007bff; color: white;
+            border: none; border-radius: 50px; font-size: 20px; font-weight: bold;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2); cursor: pointer;
         }
 
-        .widget {
-            position: absolute; z-index: 10; background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(8px); padding: 10px; border-radius: 15px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2); border: 1px solid rgba(0,0,0,0.1); text-align: center;
+        #speedo {
+            position: absolute; top: 20px; right: 20px; z-index: 10;
+            background: rgba(255, 255, 255, 0.9); padding: 15px; border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1); text-align: center; min-width: 80px;
         }
-
-        #main-dash { min-width: 130px; display: flex; flex-direction: column; align-items: center; gap: 5px; }
-        #logo-kaabo { width: 80px; height: auto; }
-        #speed-val { font-size: 50px; font-weight: 900; color: #ff0000; line-height: 0.9; }
-
-        @media (orientation: portrait) {
-            #main-dash { top: 20px; left: 50%; transform: translateX(-50%); }
-            #weather { top: 20px; left: 15px; }
-            #elevation { bottom: 110px; left: 15px; }
-        }
-        @media (orientation: landscape) {
-            #main-dash { top: 15px; right: 15px; }
-            #weather { top: 15px; left: 15px; }
-            #elevation { bottom: 25px; left: 15px; }
-        }
+        #speed-val { font-size: 28px; font-weight: bold; color: #007bff; display: block; }
+        .unit { font-size: 12px; color: #666; }
 
         #recenter-btn {
-            position: absolute; bottom: 30px; right: 20px; z-index: 20;
-            width: 65px; height: 65px; background: #ff0000; border: 2px solid white;
-            border-radius: 50%; color: white; font-size: 28px; cursor: pointer;
+            position: absolute; bottom: 30px; right: 20px; z-index: 10;
+            width: 60px; height: 60px; background: white; border: none;
+            border-radius: 50%; box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            cursor: pointer; display: none; font-size: 24px;
         }
     </style>
 </head>
 <body>
 
     <div id="start-screen">
-        <img src="logo-kaboo.png" style="width:180px; margin-bottom:40px;" onerror="this.style.display='none'">
-        <button id="start-btn" onclick="startApp()">DÉMARRER LE GPS</button>
+        <button id="start-btn">DÉMARRER LE GPS</button>
     </div>
 
-    <div id="weather" class="widget">☀️ <span id="temp-val">--</span>°C</div>
-
-    <div id="main-dash" class="widget">
-        <img src="logo-kaboo.png" id="logo-kaabo" alt="Logo" onerror="this.style.display='none'">
+    <div id="speedo">
         <span id="speed-val">0</span>
-        <span style="font-size: 11px; font-weight: 800;">KM/H</span>
+        <span class="unit">km/h</span>
     </div>
 
-    <div id="elevation" class="widget">
-        <span style="font-size: 9px; color:#666; display:block; font-weight: bold;">ALTITUDE</span>
-        <span id="alt-val">--</span> m
-    </div>
-
-    <button id="recenter-btn" onclick="recenter()">🎯</button>
+    <button id="recenter-btn">🎯</button>
     <div id="map"></div>
 
     <script>
-        let map, marker;
-        let userPos = { lat: 48.8566, lng: 2.3522 };
+        let userPos = [2.3522, 48.8566];
         let isLocked = true;
 
-        function initMap() {
-            map = new google.maps.Map(document.getElementById("map"), {
-                center: userPos,
-                zoom: 19,
-                heading: 0,
-                tilt: 60,
-                mapId: "90f87356969d889", 
-                disableDefaultUI: true,
-                gestureHandling: "greedy",
-                // FORCER LE THÈME CLAIR ICI
-                styles: [
-                    { "elementType": "geometry", "stylers": [{ "color": "#ebe3cd" }] },
-                    { "elementType": "labels.text.fill", "stylers": [{ "color": "#523735" }] },
-                    { "featureType": "water", "elementType": "geometry.fill", "stylers": [{ "color": "#b9d3c2" }] }
-                ]
-            });
+        // Choix du style selon l'heure (Jour: 7h-20h, Nuit sinon)
+        const hour = new Date().getHours();
+        const isNight = hour < 7 || hour >= 20;
+        const mapStyle = isNight 
+            ? 'https://cartocdn.com' 
+            : 'https://cartocdn.com';
 
-            marker = new google.maps.Marker({
-                position: userPos,
-                map: map,
-                icon: {
-                    path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
-                    scale: 7,
-                    fillColor: "#ff0000",
-                    fillOpacity: 1,
-                    strokeWeight: 2,
-                    strokeColor: "#ffffff",
-                    rotation: 0
-                }
-            });
-            map.addListener('dragstart', () => { isLocked = false; });
-        }
+        const map = new mapboxgl.Map({
+            container: 'map',
+            style: mapStyle, 
+            center: userPos,
+            zoom: 17,
+            pitch: 60,
+            bearing: 0
+        });
 
-        async function startApp() {
-            const doc = document.documentElement;
-            if (doc.requestFullscreen) doc.requestFullscreen();
-            else if (doc.webkitRequestFullscreen) doc.webkitRequestFullscreen();
+        // Marqueur directionnel (Flèche)
+        const el = document.createElement('div');
+        el.style.fontSize = '40px';
+        el.innerHTML = '🔽'; // Flèche pointant vers le haut de la carte
+        const marker = new mapboxgl.Marker(el).setLngLat(userPos).addTo(map);
 
-            if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-                const res = await DeviceOrientationEvent.requestPermission();
-                if (res === 'granted') window.addEventListener('deviceorientation', handleRotation, true);
+        const startBtn = document.getElementById('start-btn');
+        const recenterBtn = document.getElementById('recenter-btn');
+
+        function init() {
+            if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+                DeviceOrientationEvent.requestPermission().then(state => {
+                    if (state === 'granted') activateGPS();
+                });
             } else {
-                window.addEventListener('deviceorientation', handleRotation, true);
+                activateGPS();
             }
-
             document.getElementById('start-screen').style.display = 'none';
-            activateGPS();
-        }
-
-        function handleRotation(e) {
-            let heading = e.webkitCompassHeading || (360 - e.alpha);
-            if (heading && isLocked && map) {
-                map.setHeading(heading);
-                const icon = marker.getIcon();
-                icon.rotation = heading;
-                marker.setIcon(icon);
-            }
+            recenterBtn.style.display = 'block';
         }
 
         function activateGPS() {
-            navigator.geolocation.watchPosition((p) => {
-                userPos = { lat: p.coords.latitude, lng: p.coords.longitude };
-                marker.setPosition(userPos);
-                if (isLocked) map.setCenter(userPos);
-                document.getElementById('speed-val').innerText = Math.round((p.coords.speed || 0) * 3.6);
-                if (p.coords.altitude !== null) document.getElementById('alt-val').innerText = Math.round(p.coords.altitude);
-                fetchWeather();
+            // Suivi Boussole
+            window.addEventListener('deviceorientation', (e) => {
+                let heading = e.webkitCompassHeading || (360 - e.alpha);
+                if (heading && isLocked) {
+                    map.setBearing(heading);
+                }
+            });
+
+            // Suivi Position & Vitesse
+            navigator.geolocation.watchPosition((pos) => {
+                userPos = [pos.coords.longitude, pos.coords.latitude];
+                marker.setLngLat(userPos);
+                
+                if (isLocked) {
+                    map.easeTo({ center: userPos, duration: 800 });
+                }
+
+                // Vitesse en km/h
+                if (pos.coords.speed > 0.5) {
+                    document.getElementById('speed-val').innerText = Math.round(pos.coords.speed * 3.6);
+                } else {
+                    document.getElementById('speed-val').innerText = "0";
+                }
             }, null, { enableHighAccuracy: true });
         }
 
-        async function fetchWeather() {
-            try {
-                const res = await fetch(`https://open-meteo.com{userPos.lat}&longitude=${userPos.lng}&current_weather=true`);
-                const data = await res.json();
-                document.getElementById('temp-val').innerText = Math.round(data.current_weather.temperature);
-            } catch (e) {}
-        }
+        // Déverrouillage auto si on touche la carte
+        map.on('dragstart', () => { isLocked = false; });
 
-        function recenter() {
+        // Bouton de recentrage
+        recenterBtn.addEventListener('click', () => {
             isLocked = true;
-            map.setCenter(userPos);
-            map.setZoom(19);
-            map.setTilt(60);
-        }
+            map.easeTo({ center: userPos, zoom: 17, pitch: 60, duration: 1000 });
+        });
+
+        startBtn.addEventListener('click', init);
     </script>
-    
-    <script src="https://googleapis.com" async defer></script>
 </body>
 </html>

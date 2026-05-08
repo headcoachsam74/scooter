@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Kaabo Smart Dashboard Pro</title>
+    <title>Kaabo Dashboard Pro</title>
     
     <style>
         * { box-sizing: border-box; }
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; font-family: 'Arial Black', sans-serif; overflow: hidden; }
         #map { position: absolute; top: 0; bottom: 0; width: 100%; z-index: 1; }
         
-        /* Écran de démarrage noir avec Logo Kaabo */
+        /* Écran de démarrage */
         #start-screen {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: #000; z-index: 2000; 
@@ -31,7 +31,7 @@
             text-align: center;
         }
 
-        /* Bloc Vitesse + Logo Kaabo */
+        /* Dashboard Vitesse + Logo Kaabo */
         #main-dash { min-width: 130px; display: flex; flex-direction: column; align-items: center; gap: 5px; }
         #logo-kaabo { width: 80px; height: auto; }
         #speed-val { font-size: 50px; font-weight: 900; color: #ff0000; line-height: 0.9; }
@@ -48,7 +48,6 @@
             #elevation { bottom: 25px; left: 15px; }
         }
 
-        /* Bouton Recenter */
         #recenter-btn {
             position: absolute; bottom: 30px; right: 20px; z-index: 20;
             width: 65px; height: 65px; background: #ff0000; border: 2px solid white;
@@ -60,7 +59,7 @@
 
     <div id="start-screen">
         <img src="logo-kaboo.png" id="logo-start" alt="Kaabo Logo" onerror="this.style.display='none'">
-        <button id="start-btn" onclick="startApp()">DÉMARRER LE GPS</button>
+        <button id="start-btn" onclick="startApp()">DÉMARRER</button>
     </div>
 
     <div id="weather" class="widget">☀️ <span id="temp-val">--</span>°C</div>
@@ -97,7 +96,6 @@
                 gestureHandling: "greedy"
             });
 
-            // Flèche de navigation
             marker = new google.maps.Marker({
                 position: userPos,
                 map: map,
@@ -115,7 +113,7 @@
             map.addListener('dragstart', () => { isLocked = false; });
         }
 
-        // 2. Lancement au clic (Permissions + Plein écran)
+        // 2. Lancement au clic
         async function startApp() {
             const doc = document.documentElement;
             if (doc.requestFullscreen) doc.requestFullscreen();
@@ -132,7 +130,7 @@
             activateGPS();
         }
 
-        // 3. Boussole
+        // 3. Rotation
         function handleRotation(e) {
             let heading = e.webkitCompassHeading || (360 - e.alpha);
             if (heading && isLocked && map) {
@@ -143,12 +141,11 @@
             }
         }
 
-        // 4. Position et Données GPS
+        // 4. GPS
         function activateGPS() {
             navigator.geolocation.watchPosition((p) => {
                 userPos = { lat: p.coords.latitude, lng: p.coords.longitude };
                 marker.setPosition(userPos);
-                
                 if (isLocked) map.setCenter(userPos);
                 
                 document.getElementById('speed-val').innerText = Math.round((p.coords.speed || 0) * 3.6);
@@ -159,7 +156,7 @@
             }, null, { enableHighAccuracy: true });
         }
 
-        // 5. Météo réelle via API
+        // 5. Météo
         async function fetchWeather() {
             try {
                 const res = await fetch(`https://open-meteo.com{userPos.lat}&longitude=${userPos.lng}&current_weather=true`);
@@ -168,7 +165,7 @@
             } catch (e) {}
         }
 
-        // 6. Recenter
+        // 6. Recentrer
         function recenter() {
             isLocked = true;
             map.setCenter(userPos);
@@ -177,7 +174,7 @@
         }
     </script>
     
-    <!-- Script Google Maps avec Ta Clé API -->
+    <!-- Script Google Maps avec TA CLÉ -->
     <script src="https://googleapis.com" async defer></script>
 </body>
 </html>

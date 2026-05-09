@@ -10,6 +10,7 @@
         
         #map { position: absolute; top: 0; bottom: 0; width: 100%; z-index: 1; background: #1a1a1a; }
         
+        /* Widgets Style */
         .widget { 
             position: absolute; z-index: 10; 
             background: rgba(15, 15, 15, 0.85); 
@@ -25,22 +26,32 @@
         #speed-val { font-size: 65px; font-weight: 900; color: #ff0000; display: block; line-height: 0.8; }
         .unit { font-size: 14px; font-weight: 900; color: #aaa; letter-spacing: 3px; }
         
-        #weather { top: 20px; left: 15px; font-size: 16px; transition: transform 0.2s; }
-        #weather:active { transform: scale(0.95); }
+        #weather { top: 20px; left: 15px; font-size: 16px; }
         #elevation { bottom: 30px; left: 15px; font-size: 14px; }
 
-        /* MODALE MÉTÉO DÉTAILLÉE */
+        /* MODALE MÉTÉO AVEC PRÉVISIONS */
         #weather-modal {
             display: none; position: fixed; inset: 0; z-index: 3000;
-            background: rgba(0,0,0,0.8); align-items: center; justify-content: center;
+            background: rgba(0,0,0,0.85); align-items: center; justify-content: center;
         }
         .modal-content {
-            background: #1a1a1a; padding: 25px; border-radius: 30px; width: 85%; max-width: 320px;
+            background: #1a1a1a; padding: 20px; border-radius: 30px; width: 90%; max-width: 350px;
             border: 1px solid #ff0000; text-align: center; color: white;
         }
-        .modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
-        .grid-item { background: #222; padding: 10px; border-radius: 15px; font-size: 13px; }
-        .close-modal { margin-top: 20px; padding: 10px 30px; background: #ff0000; border: none; border-radius: 20px; color: white; font-weight: bold; }
+        .forecast-container {
+            display: flex; overflow-x: auto; gap: 15px; margin: 20px 0; padding-bottom: 10px;
+            scrollbar-width: none; /* Cache scrollbar Firefox */
+        }
+        .forecast-container::-webkit-scrollbar { display: none; } /* Cache scrollbar Chrome */
+        
+        .forecast-item {
+            min-width: 60px; background: #222; padding: 10px; border-radius: 15px;
+            flex-shrink: 0; border: 1px solid #333;
+        }
+        .forecast-time { font-size: 11px; color: #888; margin-bottom: 5px; }
+        .forecast-temp { font-weight: bold; color: #ff0000; }
+
+        .close-modal { margin-top: 10px; padding: 12px 40px; background: #ff0000; border: none; border-radius: 25px; color: white; font-weight: bold; text-transform: uppercase; }
 
         #lock-btn { 
             position: absolute; bottom: 30px; right: 15px; z-index: 100;
@@ -69,15 +80,17 @@
 
     <div id="weather-modal" onclick="closeWeather()">
         <div class="modal-content" onclick="event.stopPropagation()">
-            <h2 style="margin:0">Météo Locale</h2>
-            <div id="weather-main-temp" style="font-size: 40px; font-weight: 900; color: #ff0000; margin: 10px 0;">--°C</div>
-            <div class="modal-grid">
-                <div class="grid-item">💧 Humidité<br><b id="meteo-hum">--%</b></div>
-                <div class="grid-item">🌬️ Vent<br><b id="meteo-wind">-- km/h</b></div>
-                <div class="grid-item">🌡️ Ressenti<br><b id="meteo-app">--°C</b></div>
-                <div class="grid-item">☁️ Couverture<br><b id="meteo-cloud">--%</b></div>
+            <h3 style="margin:0; text-transform: uppercase; letter-spacing: 2px;">Prévisions</h3>
+            
+            <div id="forecast-list" class="forecast-container">
+                </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+                <div style="background:#222; padding:10px; border-radius:15px; font-size:12px;">🌬️ Vent<br><b id="meteo-wind">--</b></div>
+                <div style="background:#222; padding:10px; border-radius:15px; font-size:12px;">🌡️ Ressenti<br><b id="meteo-app">--</b></div>
             </div>
-            <button class="close-modal" onclick="closeWeather()">RETOUR</button>
+
+            <button class="close-modal" onclick="closeWeather()">Fermer</button>
         </div>
     </div>
 
@@ -99,7 +112,6 @@
         let map, marker, userPos = { lat: 45.5017, lng: -73.5673 };
         let isLocked = true;
         let lastWeatherUpdate = 0;
-        let currentWeatherData = null;
 
         function initMap() {
             if (typeof google === 'undefined') return;
@@ -122,27 +134,17 @@
             if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(() => {});
             document.getElementById('start-screen').style.display = 'none';
             if ('wakeLock' in navigator) { try { await navigator.wakeLock.request('screen'); } catch (err) {} }
-            
-            if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-                try {
-                    const res = await DeviceOrientationEvent.requestPermission();
-                    if (res === 'granted') window.addEventListener('deviceorientation', handleRotation, true);
-                } catch(e) {}
-            } else {
-                window.addEventListener('deviceorientation', handleRotation, true);
-            }
             activateGPS();
         }
 
-        function handleRotation(e) {
+        // --- GPS & Boussole (Inchangé) ---
+        window.addEventListener('deviceorientation', (e) => {
             let heading = e.webkitCompassHeading || (360 - e.alpha);
             if (heading && map && marker) {
-                const icon = marker.getIcon();
-                icon.rotation = heading;
-                marker.setIcon(icon);
+                const icon = marker.getIcon(); icon.rotation = heading; marker.setIcon(icon);
                 if (isLocked) map.setHeading(heading);
             }
-        }
+        }, true);
 
         function activateGPS() {
             navigator.geolocation.watchPosition((p) => {
@@ -151,35 +153,51 @@
                 if (marker) marker.setPosition(userPos);
                 if (isLocked && map) {
                     map.setCenter(userPos);
-                    if (speed > 40) map.setZoom(16);
-                    else if (speed > 20) map.setZoom(17);
-                    else map.setZoom(18);
+                    map.setZoom(speed > 30 ? 17 : 18);
                 }
                 document.getElementById('speed-val').innerText = speed;
                 if (p.coords.altitude !== null) document.getElementById('alt-val').innerText = Math.round(p.coords.altitude);
                 if (Date.now() - lastWeatherUpdate > 600000) { fetchWeather(); lastWeatherUpdate = Date.now(); }
-            }, (e) => console.error(e), { enableHighAccuracy: true });
+            }, null, { enableHighAccuracy: true });
         }
 
         async function fetchWeather() {
             try {
-                const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${userPos.lat}&longitude=${userPos.lng}&current_weather=true&hourly=apparent_temperature,relative_humidity_2m,cloud_cover`);
+                // On récupère les 12 prochaines heures
+                const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${userPos.lat}&longitude=${userPos.lng}&current_weather=true&hourly=temperature_2m,weathercode,apparent_temperature&forecast_days=1`);
                 const data = await res.json();
-                currentWeatherData = data;
                 
-                const temp = Math.round(data.current_weather.temperature);
-                document.getElementById('temp-val').innerText = temp;
-                document.getElementById('weather-main-temp').innerText = temp + "°C";
-                document.getElementById('meteo-hum').innerText = data.hourly.relative_humidity_2m[0] + "%";
+                // Température actuelle
+                document.getElementById('temp-val').innerText = Math.round(data.current_weather.temperature);
                 document.getElementById('meteo-wind').innerText = Math.round(data.current_weather.windspeed) + " km/h";
                 document.getElementById('meteo-app').innerText = Math.round(data.hourly.apparent_temperature[0]) + "°C";
-                document.getElementById('meteo-cloud').innerText = data.hourly.cloud_cover[0] + "%";
-            } catch (e) {}
+
+                // Construction de la liste des prévisions (prochaines 8h)
+                const list = document.getElementById('forecast-list');
+                list.innerHTML = "";
+                const currentHour = new Date().getHours();
+
+                for(let i = currentHour + 1; i < currentHour + 9; i++) {
+                    const temp = Math.round(data.hourly.temperature_2m[i]);
+                    const time = i > 23 ? i-24 : i;
+                    const code = data.hourly.weathercode[i];
+                    let icon = "☀️";
+                    if(code > 0) icon = "☁️";
+                    if(code > 50) icon = "🌧️";
+
+                    list.innerHTML += `
+                        <div class="forecast-item">
+                            <div class="forecast-time">${time}h00</div>
+                            <div style="font-size:20px; margin:5px 0;">${icon}</div>
+                            <div class="forecast-temp">${temp}°</div>
+                        </div>
+                    `;
+                }
+            } catch (e) { console.log("Météo Error"); }
         }
 
         function openWeather() { document.getElementById('weather-modal').style.display = 'flex'; }
         function closeWeather() { document.getElementById('weather-modal').style.display = 'none'; }
-
         function toggleLock() {
             isLocked = !isLocked;
             const btn = document.getElementById('lock-btn');

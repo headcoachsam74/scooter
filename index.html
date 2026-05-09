@@ -12,29 +12,41 @@
         
         .widget { 
             position: absolute; z-index: 10; 
-            background: rgba(255, 255, 255, 0.9); 
-            backdrop-filter: blur(12px); 
+            background: rgba(15, 15, 15, 0.85); 
+            backdrop-filter: blur(10px); 
             padding: 12px; border-radius: 20px; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
-            text-align: center; border: 1px solid rgba(255,255,255,0.3);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.7); 
+            text-align: center; border: 1px solid rgba(255,255,255,0.1);
+            color: white; cursor: pointer;
         }
 
-        #main-dash { min-width: 160px; top: 20px; left: 50%; transform: translateX(-50%); }
-
+        #main-dash { min-width: 160px; top: 20px; left: 50%; transform: translateX(-50%); cursor: default; }
         .mini-logo { width: 80px; height: auto; display: block; margin: 0 auto 5px auto; }
-
-        #speed-val { font-size: 60px; font-weight: 900; color: #ff0000; display: block; line-height: 0.9; }
-        .unit { font-size: 14px; font-weight: 900; color: #111; letter-spacing: 3px; }
+        #speed-val { font-size: 65px; font-weight: 900; color: #ff0000; display: block; line-height: 0.8; }
+        .unit { font-size: 14px; font-weight: 900; color: #aaa; letter-spacing: 3px; }
         
-        #weather { top: 20px; left: 15px; font-weight: 800; }
-        #elevation { bottom: 30px; left: 15px; font-weight: 800; }
+        #weather { top: 20px; left: 15px; font-size: 16px; transition: transform 0.2s; }
+        #weather:active { transform: scale(0.95); }
+        #elevation { bottom: 30px; left: 15px; font-size: 14px; }
+
+        /* MODALE MÉTÉO DÉTAILLÉE */
+        #weather-modal {
+            display: none; position: fixed; inset: 0; z-index: 3000;
+            background: rgba(0,0,0,0.8); align-items: center; justify-content: center;
+        }
+        .modal-content {
+            background: #1a1a1a; padding: 25px; border-radius: 30px; width: 85%; max-width: 320px;
+            border: 1px solid #ff0000; text-align: center; color: white;
+        }
+        .modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
+        .grid-item { background: #222; padding: 10px; border-radius: 15px; font-size: 13px; }
+        .close-modal { margin-top: 20px; padding: 10px 30px; background: #ff0000; border: none; border-radius: 20px; color: white; font-weight: bold; }
 
         #lock-btn { 
             position: absolute; bottom: 30px; right: 15px; z-index: 100;
             width: 65px; height: 65px; border-radius: 50%;
             background: #ff0000; color: white; border: none;
-            font-size: 28px; cursor: pointer; box-shadow: 0 5px 20px rgba(255,0,0,0.4);
-            display: flex; align-items: center; justify-content: center;
+            font-size: 28px; cursor: pointer; display: flex; align-items: center; justify-content: center;
         }
 
         #start-screen { 
@@ -42,27 +54,34 @@
             display: flex; flex-direction: column; align-items: center; justify-content: center; 
         }
         .main-logo { width: 250px; height: auto; margin-bottom: 40px; }
+        #start-btn { padding: 22px 70px; background: #ff0000; color: white; border: none; border-radius: 50px; font-size: 22px; font-weight: 900; }
 
-        #start-btn { 
-            padding: 22px 70px; background: #ff0000; color: white; border: none; 
-            border-radius: 50px; font-size: 22px; font-weight: 900; cursor: pointer;
-            text-transform: uppercase; letter-spacing: 2px;
-        }
-
-        @media (orientation: landscape) {
-            #main-dash { top: 15px; right: 15px; left: auto; transform: none; }
-        }
+        @media (orientation: landscape) { #main-dash { top: 15px; right: 15px; left: auto; transform: none; } }
     </style>
 </head>
 <body>
 
     <div id="start-screen">
-        <img src="logo-kaboo.png" class="main-logo" alt="KAABO" onerror="this.onerror=null; this.src=''; this.style.display='none'; document.getElementById('fallback-text').style.display='block';">
+        <img src="logo-kaboo.png" class="main-logo" alt="KAABO" onerror="this.style.display='none'; document.getElementById('fallback-text').style.display='block';">
         <h1 id="fallback-text" style="color:white; display:none; letter-spacing: 8px; margin-bottom: 40px;">KAABO</h1>
         <button id="start-btn" onclick="startApp()">DÉMARRER</button>
     </div>
 
-    <div id="weather" class="widget">☀️ <span id="temp-val">--</span>°C</div>
+    <div id="weather-modal" onclick="closeWeather()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <h2 style="margin:0">Météo Locale</h2>
+            <div id="weather-main-temp" style="font-size: 40px; font-weight: 900; color: #ff0000; margin: 10px 0;">--°C</div>
+            <div class="modal-grid">
+                <div class="grid-item">💧 Humidité<br><b id="meteo-hum">--%</b></div>
+                <div class="grid-item">🌬️ Vent<br><b id="meteo-wind">-- km/h</b></div>
+                <div class="grid-item">🌡️ Ressenti<br><b id="meteo-app">--°C</b></div>
+                <div class="grid-item">☁️ Couverture<br><b id="meteo-cloud">--%</b></div>
+            </div>
+            <button class="close-modal" onclick="closeWeather()">RETOUR</button>
+        </div>
+    </div>
+
+    <div id="weather" class="widget" onclick="openWeather()">☀️ <span id="temp-val">--</span>°C</div>
 
     <div id="main-dash" class="widget">
         <img src="logo-kaboo.png" class="mini-logo" alt="logo" onerror="this.style.display='none';">
@@ -80,31 +99,30 @@
         let map, marker, userPos = { lat: 45.5017, lng: -73.5673 };
         let isLocked = true;
         let lastWeatherUpdate = 0;
+        let currentWeatherData = null;
 
         function initMap() {
             if (typeof google === 'undefined') return;
-            try {
-                map = new google.maps.Map(document.getElementById("map"), {
-                    center: userPos, zoom: 18, tilt: 45, heading: 0,
-                    disableDefaultUI: true, gestureHandling: "greedy",
-                    mapId: "90f87356969d889"
-                });
-                marker = new google.maps.Marker({
-                    position: userPos, map: map,
-                    icon: {
-                        path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
-                        scale: 10, fillColor: "#ff0000", fillOpacity: 1,
-                        strokeWeight: 3, strokeColor: "#ffffff", rotation: 0
-                    }
-                });
-            } catch(e) { console.error("Map Error", e); }
+            map = new google.maps.Map(document.getElementById("map"), {
+                center: userPos, zoom: 18, tilt: 45, heading: 0,
+                disableDefaultUI: true, gestureHandling: "greedy",
+                mapId: "90f87356969d889"
+            });
+            marker = new google.maps.Marker({
+                position: userPos, map: map,
+                icon: {
+                    path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
+                    scale: 12, fillColor: "#ff0000", fillOpacity: 1,
+                    strokeWeight: 4, strokeColor: "#ffffff", rotation: 0
+                }
+            });
         }
 
         async function startApp() {
+            if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(() => {});
             document.getElementById('start-screen').style.display = 'none';
-            if ('wakeLock' in navigator) {
-                try { await navigator.wakeLock.request('screen'); } catch (err) {}
-            }
+            if ('wakeLock' in navigator) { try { await navigator.wakeLock.request('screen'); } catch (err) {} }
+            
             if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
                 try {
                     const res = await DeviceOrientationEvent.requestPermission();
@@ -129,9 +147,15 @@
         function activateGPS() {
             navigator.geolocation.watchPosition((p) => {
                 userPos = { lat: p.coords.latitude, lng: p.coords.longitude };
+                const speed = Math.round((p.coords.speed || 0) * 3.6);
                 if (marker) marker.setPosition(userPos);
-                if (isLocked && map) map.setCenter(userPos);
-                document.getElementById('speed-val').innerText = Math.round((p.coords.speed || 0) * 3.6);
+                if (isLocked && map) {
+                    map.setCenter(userPos);
+                    if (speed > 40) map.setZoom(16);
+                    else if (speed > 20) map.setZoom(17);
+                    else map.setZoom(18);
+                }
+                document.getElementById('speed-val').innerText = speed;
                 if (p.coords.altitude !== null) document.getElementById('alt-val').innerText = Math.round(p.coords.altitude);
                 if (Date.now() - lastWeatherUpdate > 600000) { fetchWeather(); lastWeatherUpdate = Date.now(); }
             }, (e) => console.error(e), { enableHighAccuracy: true });
@@ -139,11 +163,22 @@
 
         async function fetchWeather() {
             try {
-                const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${userPos.lat}&longitude=${userPos.lng}&current_weather=true`);
+                const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${userPos.lat}&longitude=${userPos.lng}&current_weather=true&hourly=apparent_temperature,relative_humidity_2m,cloud_cover`);
                 const data = await res.json();
-                document.getElementById('temp-val').innerText = Math.round(data.current_weather.temperature);
+                currentWeatherData = data;
+                
+                const temp = Math.round(data.current_weather.temperature);
+                document.getElementById('temp-val').innerText = temp;
+                document.getElementById('weather-main-temp').innerText = temp + "°C";
+                document.getElementById('meteo-hum').innerText = data.hourly.relative_humidity_2m[0] + "%";
+                document.getElementById('meteo-wind').innerText = Math.round(data.current_weather.windspeed) + " km/h";
+                document.getElementById('meteo-app').innerText = Math.round(data.hourly.apparent_temperature[0]) + "°C";
+                document.getElementById('meteo-cloud').innerText = data.hourly.cloud_cover[0] + "%";
             } catch (e) {}
         }
+
+        function openWeather() { document.getElementById('weather-modal').style.display = 'flex'; }
+        function closeWeather() { document.getElementById('weather-modal').style.display = 'none'; }
 
         function toggleLock() {
             isLocked = !isLocked;

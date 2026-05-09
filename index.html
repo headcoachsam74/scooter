@@ -10,7 +10,6 @@
         
         #map { position: absolute; top: 0; bottom: 0; width: 100%; z-index: 1; background: #1a1a1a; }
         
-        /* Style des Widgets */
         .widget { 
             position: absolute; z-index: 10; 
             background: rgba(255, 255, 255, 0.9); 
@@ -20,15 +19,17 @@
             text-align: center; border: 1px solid rgba(255,255,255,0.3);
         }
 
-        /* Dashboard Principal avec Logo */
         #main-dash { 
             min-width: 160px; top: 20px; left: 50%; transform: translateX(-50%); 
             padding-top: 15px;
         }
+
+        /* STYLE DU PETIT LOGO DANS LE COMPTEUR */
         .mini-logo {
-            width: 70px; /* Taille du logo au-dessus de la vitesse */
+            width: 80px; 
+            height: auto;
             margin-bottom: 5px;
-            filter: drop-shadow(0px 2px 2px rgba(0,0,0,0.2));
+            filter: drop-shadow(0px 2px 2px rgba(0,0,0,0.1));
         }
 
         #speed-val { font-size: 65px; font-weight: 900; color: #ff0000; display: block; line-height: 0.8; }
@@ -45,13 +46,14 @@
             display: flex; align-items: center; justify-content: center;
         }
 
-        /* Écran de démarrage avec Grand Logo */
+        /* STYLE DU GRAND LOGO AU DÉMARRAGE */
         #start-screen { 
             position: fixed; inset: 0; background: #000; z-index: 2000; 
             display: flex; flex-direction: column; align-items: center; justify-content: center; 
         }
         .main-logo {
-            width: 250px; /* Taille du logo à l'entrée */
+            width: 280px; 
+            height: auto;
             margin-bottom: 40px;
         }
 
@@ -70,100 +72,4 @@
 <body>
 
     <div id="start-screen">
-        <img src="https://raw.githubusercontent.com/headcoachsam74/scooter/main/kaabo-logo.png" alt="KAABO" class="main-logo" onerror="this.style.display='none'; document.getElementById('logo-fallback').style.display='block';">
-        <h1 id="logo-fallback" style="color:white; display:none; letter-spacing: 10px; margin-bottom: 40px;">KAABO</h1>
-        
-        <button id="start-btn" onclick="startApp()">DÉMARRER</button>
-    </div>
-
-    <div id="weather" class="widget">☀️ <span id="temp-val">--</span>°C</div>
-
-    <div id="main-dash" class="widget">
-        <img src="https://raw.githubusercontent.com/headcoachsam74/scooter/main/kaabo-logo.png" alt="Kaabo" class="mini-logo" onerror="this.style.display='none';">
-        <span id="speed-val">0</span>
-        <span class="unit">KM/H</span>
-    </div>
-
-    <div id="elevation" class="widget">⛰️ <span id="alt-val">--</span> m</div>
-    
-    <button id="lock-btn" onclick="toggleLock()">🔒</button>
-
-    <div id="map"></div>
-
-    <script>
-        // --- MÉCANIQUE GPS & CARTE (Inchangée pour la stabilité) ---
-        let map, marker, userPos = { lat: 45.5017, lng: -73.5673 };
-        let isLocked = true;
-        let lastWeatherUpdate = 0;
-
-        function initMap() {
-            try {
-                map = new google.maps.Map(document.getElementById("map"), {
-                    center: userPos, zoom: 18, tilt: 45, heading: 0,
-                    disableDefaultUI: true, gestureHandling: "greedy",
-                    mapId: "90f87356969d889"
-                });
-                marker = new google.maps.Marker({
-                    position: userPos, map: map,
-                    icon: {
-                        path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
-                        scale: 10, fillColor: "#ff0000", fillOpacity: 1,
-                        strokeWeight: 3, strokeColor: "#ffffff", rotation: 0
-                    }
-                });
-            } catch(e) { console.error("Map Error"); }
-        }
-
-        async function startApp() {
-            document.getElementById('start-screen').style.display = 'none';
-            if ('wakeLock' in navigator) {
-                try { await navigator.wakeLock.request('screen'); } catch (err) {}
-            }
-            if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-                const res = await DeviceOrientationEvent.requestPermission();
-                if (res === 'granted') window.addEventListener('deviceorientation', handleRotation, true);
-            } else {
-                window.addEventListener('deviceorientation', handleRotation, true);
-            }
-            activateGPS();
-        }
-
-        function handleRotation(e) {
-            let heading = e.webkitCompassHeading || (360 - e.alpha);
-            if (heading && map && marker) {
-                const icon = marker.getIcon();
-                icon.rotation = heading;
-                marker.setIcon(icon);
-                if (isLocked) map.setHeading(heading);
-            }
-        }
-
-        function activateGPS() {
-            navigator.geolocation.watchPosition((p) => {
-                userPos = { lat: p.coords.latitude, lng: p.coords.longitude };
-                if (marker) marker.setPosition(userPos);
-                if (isLocked && map) map.setCenter(userPos);
-                document.getElementById('speed-val').innerText = Math.round((p.coords.speed || 0) * 3.6);
-                if (p.coords.altitude !== null) document.getElementById('alt-val').innerText = Math.round(p.coords.altitude);
-                if (Date.now() - lastWeatherUpdate > 600000) { fetchWeather(); lastWeatherUpdate = Date.now(); }
-            }, (e) => console.error(e), { enableHighAccuracy: true });
-        }
-
-        async function fetchWeather() {
-            try {
-                const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${userPos.lat}&longitude=${userPos.lng}&current_weather=true`);
-                const data = await res.json();
-                document.getElementById('temp-val').innerText = Math.round(data.current_weather.temperature);
-            } catch (e) {}
-        }
-
-        function toggleLock() {
-            isLocked = !isLocked;
-            const btn = document.getElementById('lock-btn');
-            btn.innerText = isLocked ? "🔒" : "🔓";
-            btn.style.background = isLocked ? "#ff0000" : "#444";
-        }
-    </script>
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBN-m4BiC0T71ftObq197Esiu9o9k925ig&callback=initMap" async defer></script>
-</body>
-</html>
+        <img src="logo-kaboo.png" alt="KAABO" class="main-logo" onerror="this.style.display='none'; document.getElementById('logo-text-start').style.display='block

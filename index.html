@@ -10,7 +10,6 @@
         
         #map { position: absolute; top: 0; bottom: 0; width: 100%; z-index: 1; background: #1a1a1a; }
         
-        /* Widgets Style */
         .widget { 
             position: absolute; z-index: 10; 
             background: rgba(15, 15, 15, 0.85); 
@@ -28,6 +27,26 @@
         
         #weather { top: 20px; left: 15px; font-size: 16px; }
         #elevation { bottom: 30px; left: 15px; font-size: 14px; }
+
+        /* MODALE MÉTÉO */
+        #weather-modal {
+            display: none; position: fixed; inset: 0; z-index: 3000;
+            background: rgba(0,0,0,0.85); align-items: center; justify-content: center;
+        }
+        .modal-content {
+            background: #1a1a1a; padding: 20px; border-radius: 30px; width: 90%; max-width: 350px;
+            border: 1px solid #ff0000; text-align: center; color: white;
+        }
+        .forecast-container {
+            display: flex; overflow-x: auto; gap: 15px; margin: 20px 0; padding-bottom: 10px;
+        }
+        .forecast-item {
+            min-width: 65px; background: #222; padding: 10px; border-radius: 15px;
+            flex-shrink: 0; border: 1px solid #333;
+        }
+        .forecast-time { font-size: 11px; color: #888; }
+        .forecast-temp { font-weight: bold; color: #ff0000; }
+        .close-modal { margin-top: 10px; padding: 12px 40px; background: #ff0000; border: none; border-radius: 25px; color: white; font-weight: bold; }
 
         #lock-btn { 
             position: absolute; bottom: 30px; right: 15px; z-index: 100;
@@ -49,12 +68,23 @@
 <body>
 
     <div id="start-screen">
-        <img src="logo-kaboo.png" class="main-logo" alt="KAABO" onerror="this.style.display='none'; document.getElementById('fallback-text').style.display='block';">
-        <h1 id="fallback-text" style="color:white; display:none; letter-spacing: 8px; margin-bottom: 40px;">KAABO</h1>
+        <img src="logo-kaboo.png" class="main-logo" alt="KAABO" onerror="this.style.display='none';">
         <button id="start-btn" onclick="startApp()">DÉMARRER</button>
     </div>
 
-    <div id="weather" class="widget">☀️ <span id="temp-val">--</span>°C</div>
+    <div id="weather-modal" onclick="closeWeather()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <h3 style="margin:0; text-transform: uppercase;">Prévisions</h3>
+            <div id="forecast-list" class="forecast-container"></div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+                <div style="background:#222; padding:10px; border-radius:15px; font-size:12px;">🌬️ Vent<br><b id="meteo-wind">--</b></div>
+                <div style="background:#222; padding:10px; border-radius:15px; font-size:12px;">🌡️ Ressenti<br><b id="meteo-app">--</b></div>
+            </div>
+            <button class="close-modal" onclick="closeWeather()">Fermer</button>
+        </div>
+    </div>
+
+    <div id="weather" class="widget" onclick="openWeather()">☀️ <span id="temp-val">--</span>°C</div>
 
     <div id="main-dash" class="widget">
         <img src="logo-kaboo.png" class="mini-logo" alt="logo" onerror="this.style.display='none';">
@@ -71,30 +101,21 @@
     <script>
         let map, marker, userPos = { lat: 45.5017, lng: -73.5673 };
         let isLocked = true;
+        let lastWeatherUpdate = 0;
 
         function initMap() {
             if (typeof google === 'undefined') return;
             map = new google.maps.Map(document.getElementById("map"), {
-                center: userPos, 
-                zoom: 19, 
-                tilt: 45, // Inclinaison type automobile
-                heading: 0,
-                disableDefaultUI: true, 
-                gestureHandling: "greedy",
+                center: userPos, zoom: 19, tilt: 45, heading: 0,
+                disableDefaultUI: true, gestureHandling: "greedy",
                 mapId: "90f87356969d889"
             });
-
-            // Point rouge au lieu de la flèche
             marker = new google.maps.Marker({
-                position: userPos, 
-                map: map,
+                position: userPos, map: map,
                 icon: {
                     path: google.maps.SymbolPath.CIRCLE,
-                    scale: 12, 
-                    fillColor: "#ff0000", 
-                    fillOpacity: 1,
-                    strokeWeight: 4, 
-                    strokeColor: "#ffffff"
+                    scale: 12, fillColor: "#ff0000", fillOpacity: 1,
+                    strokeWeight: 4, strokeColor: "#ffffff"
                 }
             });
         }
@@ -102,11 +123,8 @@
         async function startApp() {
             if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(() => {});
             document.getElementById('start-screen').style.display = 'none';
-            
-            // Wake Lock (Écran allumé)
             if ('wakeLock' in navigator) { try { await navigator.wakeLock.request('screen'); } catch (err) {} }
             
-            // Demande de permission boussole
             if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
                 try {
                     const res = await DeviceOrientationEvent.requestPermission();
@@ -119,10 +137,8 @@
         }
 
         function handleRotation(e) {
-            // Orientation du téléphone (boussole)
             let heading = e.webkitCompassHeading || (360 - e.alpha);
             if (heading && isLocked && map) {
-                // Fait tourner la carte pour pointer vers l'avant
                 map.setHeading(heading);
             }
         }
@@ -131,22 +147,45 @@
             navigator.geolocation.watchPosition((p) => {
                 userPos = { lat: p.coords.latitude, lng: p.coords.longitude };
                 const speed = Math.round((p.coords.speed || 0) * 3.6);
-                
                 if (marker) marker.setPosition(userPos);
-                
                 if (isLocked && map) {
                     map.setCenter(userPos);
-                    // Ajustement dynamique du zoom selon la vitesse
-                    if (speed > 45) map.setZoom(16);
-                    else if (speed > 25) map.setZoom(17.5);
-                    else map.setZoom(19);
+                    map.setZoom(speed > 30 ? 17 : 19);
                 }
-                
                 document.getElementById('speed-val').innerText = speed;
                 if (p.coords.altitude !== null) document.getElementById('alt-val').innerText = Math.round(p.coords.altitude);
+                
+                if (Date.now() - lastWeatherUpdate > 600000) { 
+                    fetchWeather(); 
+                    lastWeatherUpdate = Date.now(); 
+                }
             }, null, { enableHighAccuracy: true });
         }
 
+        async function fetchWeather() {
+            try {
+                const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${userPos.lat}&longitude=${userPos.lng}&current_weather=true&hourly=temperature_2m,weathercode,apparent_temperature&forecast_days=1`);
+                const data = await res.json();
+                
+                document.getElementById('temp-val').innerText = Math.round(data.current_weather.temperature);
+                document.getElementById('meteo-wind').innerText = Math.round(data.current_weather.windspeed) + " km/h";
+                document.getElementById('meteo-app').innerText = Math.round(data.hourly.apparent_temperature[0]) + "°C";
+
+                const list = document.getElementById('forecast-list');
+                list.innerHTML = "";
+                const currentHour = new Date().getHours();
+                for(let i = currentHour + 1; i < currentHour + 9; i++) {
+                    const idx = i > 23 ? i-24 : i;
+                    const temp = Math.round(data.hourly.temperature_2m[i]);
+                    const code = data.hourly.weathercode[i];
+                    let icon = code > 50 ? "🌧️" : (code > 0 ? "☁️" : "☀️");
+                    list.innerHTML += `<div class="forecast-item"><div class="forecast-time">${idx}h</div><div style="font-size:20px;">${icon}</div><div class="forecast-temp">${temp}°</div></div>`;
+                }
+            } catch (e) {}
+        }
+
+        function openWeather() { document.getElementById('weather-modal').style.display = 'flex'; }
+        function closeWeather() { document.getElementById('weather-modal').style.display = 'none'; }
         function toggleLock() {
             isLocked = !isLocked;
             const btn = document.getElementById('lock-btn');

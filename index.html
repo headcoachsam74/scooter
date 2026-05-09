@@ -34,14 +34,20 @@
         }
         .reset-btn:active { background: #ff0000; color: white; }
 
-        /* Écran de démarrage */
+        /* Écran de démarrage - RESTAURATION LOGO */
         #start-screen { 
             position: fixed; inset: 0; background: #000; z-index: 2000; 
             display: flex; flex-direction: column; align-items: center; justify-content: center; 
         }
+        .main-logo {
+            width: 280px; /* Taille généreuse pour le logo d'entrée */
+            height: auto;
+            margin-bottom: 40px; /* Espace avant le bouton */
+        }
         #start-btn { 
             padding: 22px 60px; background: #ff0000; color: white; border: none; 
             border-radius: 50px; font-size: 22px; font-weight: 900; cursor: pointer;
+            box-shadow: 0 0 30px rgba(255, 0, 0, 0.3);
         }
 
         /* Modal Météo */
@@ -55,7 +61,10 @@
 <body>
 
     <div id="start-screen">
-        <h1 style="color:#ff0000; letter-spacing: 12px; font-size: 45px; margin-bottom: 30px;">KAABO</h1>
+        <img src="logo-kaboo.png" alt="KAABO" class="main-logo" onerror="this.style.display='none'; document.getElementById('logo-text-fallback').style.display='block';">
+        
+        <h1 id="logo-text-fallback" style="color:#ff0000; display:none; letter-spacing: 12px; font-size: 45px; margin-bottom: 30px;">KAABO</h1>
+        
         <button id="start-btn" onclick="startApp()">DÉMARRER</button>
     </div>
 
@@ -76,85 +85,3 @@
     </div>
 
     <div id="weather-modal" onclick="closeWeather()">
-        <div class="modal-content">
-            <h3 style="margin-top:0; color:#ff0000;">PRÉVISIONS</h3>
-            <div id="forecast-list" style="display:flex; overflow-x:auto; gap:15px; margin:20px 0;"></div>
-            <button onclick="closeWeather()" style="width:100%; padding:15px; background:#ff0000; border:none; border-radius:15px; color:white; font-weight:bold;">RETOUR</button>
-        </div>
-    </div>
-
-    <div id="map"></div>
-
-    <script>
-        let map, marker, userPos = { lat: 45.5, lng: -73.5 }, lastPos = null;
-        let totalDistance = parseFloat(localStorage.getItem('kaabo_odo')) || 0;
-
-        function initMap() {
-            map = new google.maps.Map(document.getElementById("map"), {
-                center: userPos, zoom: 18, tilt: 60, heading: 0,
-                disableDefaultUI: true, gestureHandling: "none", mapId: "90f87356969d889"
-            });
-            marker = new google.maps.Marker({
-                position: userPos, map: map,
-                icon: { path: google.maps.SymbolPath.CIRCLE, scale: 12, fillColor: "#ff0000", fillOpacity: 1, strokeWeight: 3, strokeColor: "#fff" }
-            });
-            document.getElementById('odo-val').innerText = totalDistance.toFixed(2);
-        }
-
-        async function startApp() {
-            document.getElementById('start-screen').style.display = 'none';
-            if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen();
-            
-            if (navigator.geolocation) {
-                navigator.geolocation.watchPosition((p) => {
-                    const newPos = { lat: p.coords.latitude, lng: p.coords.longitude };
-                    const speed = (p.coords.speed || 0) * 3.6;
-                    
-                    document.getElementById('speed-val').innerText = Math.round(speed);
-                    
-                    if (lastPos && speed > 1) {
-                        totalDistance += haversine(lastPos, newPos);
-                        localStorage.setItem('kaabo_odo', totalDistance);
-                        document.getElementById('odo-val').innerText = totalDistance.toFixed(2);
-                    }
-                    lastPos = newPos;
-                    if (marker) marker.setPosition(newPos);
-                    if (map) { 
-                        map.setCenter(newPos);
-                        if (p.coords.heading) map.setHeading(p.coords.heading);
-                    }
-                }, null, { enableHighAccuracy: true });
-            }
-            fetchWeather();
-        }
-
-        function haversine(p1, p2) {
-            const R = 6371;
-            const dLat = (p2.lat - p1.lat) * Math.PI / 180;
-            const dLon = (p2.lng - p1.lng) * Math.PI / 180;
-            const a = Math.sin(dLat/2)**2 + Math.cos(p1.lat*Math.PI/180)*Math.cos(p2.lat*Math.PI/180)*Math.sin(dLon/2)**2;
-            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-        }
-
-        async function fetchWeather() {
-            try {
-                const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${userPos.lat}&longitude=${userPos.lng}&current_weather=true&hourly=temperature_2m&forecast_days=1`);
-                const data = await res.json();
-                document.getElementById('temp-val').innerText = Math.round(data.current_weather.temperature) + "°";
-                
-                const list = document.getElementById('forecast-list');
-                list.innerHTML = "";
-                const h = new Date().getHours();
-                for(let i=h+1; i<h+6; i++) {
-                    const temp = Math.round(data.hourly.temperature_2m[i%24]);
-                    list.innerHTML += `<div style="min-width:55px;">${i%24}h<br>☀️<br><b>${temp}°</b></div>`;
-                }
-            } catch(e) {}
-        }
-
-        function resetOdo() { if(confirm("Reset trajet ?")) { totalDistance = 0; localStorage.setItem('kaabo_odo', 0); document.getElementById('odo-val').innerText = "0.00"; } }
-        function openWeather() { document.getElementById('weather-modal').style.display = 'flex'; }
-        function closeWeather() { document.getElementById('weather-modal').style.display = 'none'; }
-    </script>
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBN-m4BiC0T71ftObq197Esiu9o9k925ig&callback=initMap" async defer></script>
-</body>

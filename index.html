@@ -3,48 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Kaabo Dash Pro</title>
+    <title>Kaabo Dash Vertical</title>
     <style>
-        /* Empêcher le rebond et le rafraîchissement tactile sur mobile */
+        /* Optimisation Plein Écran */
         html, body { 
-            margin: 0; padding: 0; 
-            width: 100%; height: 100%; height: 100svh; 
-            background: #000; overflow: hidden; 
-            overscroll-behavior: none; /* Désactive le pull-to-refresh */
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            margin: 0; padding: 0; width: 100%; height: 100svh; 
+            background: #000; overflow: hidden; overscroll-behavior: none;
+            font-family: -apple-system, sans-serif; color: white;
         }
 
-        #map { 
-            position: absolute; top: 0; left: 0; 
-            width: 100%; height: 100%; height: 100svh; 
-            z-index: 1; 
-        }
+        #map { position: absolute; inset: 0; z-index: 1; }
 
-        /* Cartouche Supérieure */
+        /* Cartouche Supérieure Noire */
         #top-bar {
-            position: absolute; top: 15px; left: 10px; right: 10px; height: 120px; z-index: 10;
-            background: rgba(15, 15, 15, 0.9); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            position: absolute; top: 15px; left: 12px; right: 12px; height: 110px; z-index: 10;
+            background: rgba(10, 10, 10, 0.9); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
             border-radius: 20px; display: grid; grid-template-columns: 1fr 1.2fr 1fr; align-items: center; 
-            text-align: center; border: 1px solid rgba(255,255,255,0.1); color: white;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+            text-align: center; border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
         }
 
-        #speed-val { font-size: 50px; font-weight: 900; color: #ff0000; display: block; line-height: 1; }
-        .label { font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 1px; }
-        .val { font-size: 18px; font-weight: bold; margin-top: 2px; }
+        #speed-val { font-size: 52px; font-weight: 900; color: #ff0000; display: block; line-height: 0.9; }
+        .label { font-size: 10px; color: #666; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2px; }
+        .val { font-size: 19px; font-weight: bold; color: #fff; }
 
-        /* Dock Musique */
-        #music-dock {
-            position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
-            width: 220px; height: 65px; z-index: 10;
-            background: rgba(15, 15, 15, 0.9); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-            border-radius: 35px; display: flex; align-items: center; justify-content: space-evenly;
-            border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+        /* Bouton Reset Discret */
+        .reset-btn {
+            background: #222; color: #666; border: none; border-radius: 6px; 
+            font-size: 9px; padding: 3px 8px; margin-top: 5px; font-weight: bold;
         }
+        .reset-btn:active { background: #ff0000; color: white; }
 
-        .music-btn { background: none; border: none; color: white; font-size: 24px; cursor: pointer; padding: 10px; }
-
-        /* Écran de démarrage plein écran */
+        /* Écran de démarrage */
         #start-screen { 
             position: fixed; inset: 0; background: #000; z-index: 2000; 
             display: flex; flex-direction: column; align-items: center; justify-content: center; 
@@ -52,7 +42,6 @@
         #start-btn { 
             padding: 22px 60px; background: #ff0000; color: white; border: none; 
             border-radius: 50px; font-size: 22px; font-weight: 900; cursor: pointer;
-            box-shadow: 0 0 20px rgba(255,0,0,0.4);
         }
 
         /* Modal Météo */
@@ -60,44 +49,37 @@
             display: none; position: fixed; inset: 0; z-index: 3000; 
             background: rgba(0,0,0,0.95); align-items: center; justify-content: center; 
         }
-        .modal-content { background: #111; padding: 25px; border-radius: 25px; width: 85%; border: 1px solid #ff0000; text-align: center; color: white;}
+        .modal-content { background: #111; padding: 25px; border-radius: 25px; width: 80%; border: 1px solid #ff0000; text-align: center; }
     </style>
 </head>
 <body>
 
     <div id="start-screen">
-        <h1 style="color:#ff0000; letter-spacing: 12px; font-size: 45px; margin: 0;">KAABO</h1>
-        <p style="color: #666; font-weight: bold; margin: 10px 0 30px 0;">DASHBOARD PRO</p>
+        <h1 style="color:#ff0000; letter-spacing: 12px; font-size: 45px; margin-bottom: 30px;">KAABO</h1>
         <button id="start-btn" onclick="startApp()">DÉMARRER</button>
     </div>
 
     <div id="top-bar">
         <div onclick="openWeather()" style="cursor:pointer;">
             <div class="label">Météo</div>
-            <div class="val" id="temp-val">--°</div>
+            <div id="temp-val" class="val">--°</div>
         </div>
         <div>
             <span id="speed-val">0</span>
             <div class="label">KM/H</div>
         </div>
         <div>
-            <div class="label">Distance</div>
-            <div class="val" id="odo-val">0.00</div>
-            <button onclick="resetOdo()" style="margin-top:5px; font-size:9px; background:#333; color:#ccc; border:none; border-radius:5px; padding:2px 8px;">RESET</button>
+            <div class="label">Trip</div>
+            <div id="odo-val" class="val">0.00</div>
+            <button class="reset-btn" onclick="resetOdo()">RESET</button>
         </div>
-    </div>
-
-    <div id="music-dock">
-        <button class="music-btn" onclick="mediaControl('previoustrack')">⏮</button>
-        <button class="music-btn" onclick="mediaControl('playpause')" style="color:#ff0000; font-size:32px;">⏯</button>
-        <button class="music-btn" onclick="mediaControl('nexttrack')">⏭</button>
     </div>
 
     <div id="weather-modal" onclick="closeWeather()">
         <div class="modal-content">
-            <h3 style="margin:0 0 20px 0; color:#ff0000;">PRÉVISIONS HORAIRES</h3>
-            <div id="forecast-list" style="display:flex; overflow-x:auto; gap:15px; margin-bottom:20px; padding-bottom:10px;"></div>
-            <button onclick="closeWeather()" style="width:100%; padding:15px; background:#ff0000; border:none; border-radius:15px; color:white; font-weight:bold;">FERMER</button>
+            <h3 style="margin-top:0; color:#ff0000;">PRÉVISIONS</h3>
+            <div id="forecast-list" style="display:flex; overflow-x:auto; gap:15px; margin:20px 0;"></div>
+            <button onclick="closeWeather()" style="width:100%; padding:15px; background:#ff0000; border:none; border-radius:15px; color:white; font-weight:bold;">RETOUR</button>
         </div>
     </div>
 
@@ -108,33 +90,25 @@
         let totalDistance = parseFloat(localStorage.getItem('kaabo_odo')) || 0;
 
         function initMap() {
-            try {
-                map = new google.maps.Map(document.getElementById("map"), {
-                    center: userPos, zoom: 18, tilt: 45, heading: 0,
-                    disableDefaultUI: true, mapId: "90f87356969d889",
-                    gestureHandling: "none"
-                });
-                marker = new google.maps.Marker({
-                    position: userPos, map: map,
-                    icon: { path: google.maps.SymbolPath.CIRCLE, scale: 12, fillColor: "#ff0000", fillOpacity: 1, strokeWeight: 3, strokeColor: "#fff" }
-                });
-                document.getElementById('odo-val').innerText = totalDistance.toFixed(2);
-            } catch(e) {}
+            map = new google.maps.Map(document.getElementById("map"), {
+                center: userPos, zoom: 18, tilt: 60, heading: 0,
+                disableDefaultUI: true, gestureHandling: "none", mapId: "90f87356969d889"
+            });
+            marker = new google.maps.Marker({
+                position: userPos, map: map,
+                icon: { path: google.maps.SymbolPath.CIRCLE, scale: 12, fillColor: "#ff0000", fillOpacity: 1, strokeWeight: 3, strokeColor: "#fff" }
+            });
+            document.getElementById('odo-val').innerText = totalDistance.toFixed(2);
         }
 
         async function startApp() {
-            // Demander le plein écran au navigateur
-            const doc = window.document.documentElement;
-            if (doc.requestFullscreen) doc.requestFullscreen();
-            else if (doc.webkitRequestFullscreen) doc.webkitRequestFullscreen();
-
             document.getElementById('start-screen').style.display = 'none';
+            if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen();
             
             if (navigator.geolocation) {
                 navigator.geolocation.watchPosition((p) => {
                     const newPos = { lat: p.coords.latitude, lng: p.coords.longitude };
                     const speed = (p.coords.speed || 0) * 3.6;
-                    const heading = p.coords.heading;
                     
                     document.getElementById('speed-val').innerText = Math.round(speed);
                     
@@ -147,7 +121,7 @@
                     if (marker) marker.setPosition(newPos);
                     if (map) { 
                         map.setCenter(newPos);
-                        if (heading !== null) map.setHeading(heading);
+                        if (p.coords.heading) map.setHeading(p.coords.heading);
                     }
                 }, null, { enableHighAccuracy: true });
             }
@@ -171,16 +145,11 @@
                 const list = document.getElementById('forecast-list');
                 list.innerHTML = "";
                 const h = new Date().getHours();
-                for(let i=h+1; i<h+7; i++) {
+                for(let i=h+1; i<h+6; i++) {
                     const temp = Math.round(data.hourly.temperature_2m[i%24]);
-                    list.innerHTML += `<div style="min-width:60px; background:#222; padding:10px; border-radius:12px;">${i%24}h<br>☀️<br><b>${temp}°</b></div>`;
+                    list.innerHTML += `<div style="min-width:55px;">${i%24}h<br>☀️<br><b>${temp}°</b></div>`;
                 }
             } catch(e) {}
-        }
-
-        function mediaControl(action) {
-            console.log("Media: " + action);
-            // Si une app de musique tourne, ce signal système sera capté
         }
 
         function resetOdo() { if(confirm("Reset trajet ?")) { totalDistance = 0; localStorage.setItem('kaabo_odo', 0); document.getElementById('odo-val').innerText = "0.00"; } }
@@ -189,4 +158,3 @@
     </script>
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBN-m4BiC0T71ftObq197Esiu9o9k925ig&callback=initMap" async defer></script>
 </body>
-</html>

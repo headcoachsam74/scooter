@@ -18,7 +18,6 @@
             box-shadow: 0 8px 32px rgba(0,0,0,0.4); 
             text-align: center;
             border: 1px solid rgba(255,255,255,0.3);
-            transition: all 0.3s ease;
         }
 
         #main-dash { min-width: 140px; top: 20px; left: 50%; transform: translateX(-50%); }
@@ -42,12 +41,10 @@
         #start-btn { 
             padding: 20px 60px; background: #ff0000; color: white; border: none; 
             border-radius: 50px; font-size: 22px; font-weight: bold; cursor: pointer;
-            box-shadow: 0 0 20px rgba(255,0,0,0.4);
         }
 
         @media (orientation: landscape) {
             #main-dash { top: 15px; right: 15px; left: auto; transform: none; }
-            #weather { top: 15px; left: 15px; }
         }
     </style>
 </head>
@@ -79,32 +76,36 @@
         function initMap() {
             try {
                 map = new google.maps.Map(document.getElementById("map"), {
-                    center: userPos, zoom: 18, tilt: 45, heading: 0,
-                    mapId: "90f87356969d889", 
+                    center: userPos, 
+                    zoom: 18, 
+                    tilt: 45, 
+                    heading: 0,
+                    // Si tu as un nouveau Map ID, mets-le ici. Sinon, laisse vide pour tester.
+                    // mapId: "TON_NOUVEAU_MAP_ID", 
                     disableDefaultUI: true, 
                     gestureHandling: "greedy"
                 });
 
                 marker = new google.maps.Marker({
-                    position: userPos, map: map,
+                    position: userPos, 
+                    map: map,
                     icon: {
                         path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
                         scale: 8, fillColor: "#ff0000", fillOpacity: 1,
                         strokeWeight: 2, strokeColor: "#ffffff", rotation: 0
                     }
                 });
-            } catch(e) { console.error("Map Load Error"); }
+            } catch(e) { 
+                console.error("Erreur de chargement de la carte :", e); 
+            }
         }
 
         async function startApp() {
             document.getElementById('start-screen').style.display = 'none';
-            
-            // Garder l'écran allumé
             if ('wakeLock' in navigator) {
                 try { await navigator.wakeLock.request('screen'); } catch (err) {}
             }
 
-            // Permissions iOS pour la boussole
             if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
                 try {
                     const res = await DeviceOrientationEvent.requestPermission();
@@ -113,7 +114,6 @@
             } else {
                 window.addEventListener('deviceorientation', handleRotation, true);
             }
-            
             activateGPS();
         }
 
@@ -130,27 +130,15 @@
         function activateGPS() {
             navigator.geolocation.watchPosition((p) => {
                 userPos = { lat: p.coords.latitude, lng: p.coords.longitude };
-                
                 if (marker) marker.setPosition(userPos);
                 if (isLocked && map) map.setCenter(userPos);
-                
-                // Calcul Vitesse
                 document.getElementById('speed-val').innerText = Math.round((p.coords.speed || 0) * 3.6);
-                
-                // Altitude
-                if (p.coords.altitude !== null) {
-                    document.getElementById('alt-val').innerText = Math.round(p.coords.altitude);
-                }
-
-                // Météo toutes les 10 min
+                if (p.coords.altitude !== null) document.getElementById('alt-val').innerText = Math.round(p.coords.altitude);
                 if (Date.now() - lastWeatherUpdate > 600000) {
                     fetchWeather();
                     lastWeatherUpdate = Date.now();
                 }
-            }, (e) => console.error("GPS Error", e), { 
-                enableHighAccuracy: true,
-                maximumAge: 0
-            });
+            }, (e) => console.error("GPS Error", e), { enableHighAccuracy: true });
         }
 
         async function fetchWeather() {

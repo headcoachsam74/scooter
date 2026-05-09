@@ -3,73 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Kaabo Dash Vertical</title>
+    <title>Kaabo Dash</title>
     <style>
-        /* Optimisation Plein Écran */
         html, body { 
             margin: 0; padding: 0; width: 100%; height: 100svh; 
             background: #000; overflow: hidden; overscroll-behavior: none;
-            font-family: -apple-system, sans-serif; color: white;
+            font-family: sans-serif; color: white;
         }
 
-        #map { position: absolute; inset: 0; z-index: 1; }
+        #map { position: absolute; inset: 0; z-index: 1; background: #1a1a1a; }
 
-        /* Cartouche Supérieure Noire */
+        /* Top Bar */
         #top-bar {
-            position: absolute; top: 15px; left: 12px; right: 12px; height: 110px; z-index: 10;
-            background: rgba(10, 10, 10, 0.9); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+            position: absolute; top: 15px; left: 10px; right: 10px; height: 110px; z-index: 10;
+            background: rgba(15, 15, 15, 0.9); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
             border-radius: 20px; display: grid; grid-template-columns: 1fr 1.2fr 1fr; align-items: center; 
             text-align: center; border: 1px solid rgba(255,255,255,0.1);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
         }
 
-        #speed-val { font-size: 52px; font-weight: 900; color: #ff0000; display: block; line-height: 0.9; }
-        .label { font-size: 10px; color: #666; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2px; }
-        .val { font-size: 19px; font-weight: bold; color: #fff; }
+        #speed-val { font-size: 50px; font-weight: 900; color: #ff0000; display: block; line-height: 1; }
+        .label { font-size: 10px; color: #666; text-transform: uppercase; }
+        .val { font-size: 18px; font-weight: bold; }
 
-        /* Bouton Reset Discret */
-        .reset-btn {
-            background: #222; color: #666; border: none; border-radius: 6px; 
-            font-size: 9px; padding: 3px 8px; margin-top: 5px; font-weight: bold;
-        }
-        .reset-btn:active { background: #ff0000; color: white; }
-
-        /* Écran de démarrage - RESTAURATION LOGO */
+        /* Start Screen */
         #start-screen { 
             position: fixed; inset: 0; background: #000; z-index: 2000; 
             display: flex; flex-direction: column; align-items: center; justify-content: center; 
         }
-        .main-logo {
-            width: 280px; /* Taille généreuse pour le logo d'entrée */
-            height: auto;
-            margin-bottom: 40px; /* Espace avant le bouton */
-        }
+        .main-logo { width: 250px; height: auto; margin-bottom: 30px; }
         #start-btn { 
-            padding: 22px 60px; background: #ff0000; color: white; border: none; 
-            border-radius: 50px; font-size: 22px; font-weight: 900; cursor: pointer;
-            box-shadow: 0 0 30px rgba(255, 0, 0, 0.3);
+            padding: 20px 60px; background: #ff0000; color: white; border: none; 
+            border-radius: 50px; font-size: 20px; font-weight: bold; cursor: pointer;
         }
 
-        /* Modal Météo */
         #weather-modal { 
             display: none; position: fixed; inset: 0; z-index: 3000; 
-            background: rgba(0,0,0,0.95); align-items: center; justify-content: center; 
+            background: rgba(0,0,0,0.9); align-items: center; justify-content: center; 
         }
-        .modal-content { background: #111; padding: 25px; border-radius: 25px; width: 80%; border: 1px solid #ff0000; text-align: center; }
+        .modal-content { background: #111; padding: 20px; border-radius: 20px; width: 80%; border: 1px solid #ff0000; text-align: center; }
     </style>
 </head>
 <body>
 
     <div id="start-screen">
-        <img src="logo-kaboo.png" alt="KAABO" class="main-logo" onerror="this.style.display='none'; document.getElementById('logo-text-fallback').style.display='block';">
-        
-        <h1 id="logo-text-fallback" style="color:#ff0000; display:none; letter-spacing: 12px; font-size: 45px; margin-bottom: 30px;">KAABO</h1>
-        
+        <img src="logo-kaboo.png" class="main-logo" alt="KAABO" onerror="this.parentElement.innerHTML += '<h1 style=\'color:red;letter-spacing:10px\'>KAABO</h1>'; this.remove();">
         <button id="start-btn" onclick="startApp()">DÉMARRER</button>
     </div>
 
     <div id="top-bar">
-        <div onclick="openWeather()" style="cursor:pointer;">
+        <div onclick="openWeather()">
             <div class="label">Météo</div>
             <div id="temp-val" class="val">--°</div>
         </div>
@@ -80,8 +62,29 @@
         <div>
             <div class="label">Trip</div>
             <div id="odo-val" class="val">0.00</div>
-            <button class="reset-btn" onclick="resetOdo()">RESET</button>
+            <button onclick="resetOdo()" style="background:#333;color:white;border:none;border-radius:4px;font-size:8px;padding:2px 5px;">RESET</button>
         </div>
     </div>
 
     <div id="weather-modal" onclick="closeWeather()">
+        <div class="modal-content">
+            <h3>PRÉVISIONS</h3>
+            <div id="forecast-list" style="display:flex; overflow-x:auto; gap:10px; margin:15px 0;"></div>
+            <button onclick="closeWeather()" style="background:#ff0000; color:white; border:none; padding:10px 20px; border-radius:10px;">FERMER</button>
+        </div>
+    </div>
+
+    <div id="map"></div>
+
+    <script>
+        let map, marker, userPos = { lat: 45.5, lng: -73.5 }, lastPos = null;
+        let totalDistance = parseFloat(localStorage.getItem('kaabo_odo')) || 0;
+
+        // Fonction d'initialisation de la carte (appelée par l'API Google)
+        function initMap() {
+            map = new google.maps.Map(document.getElementById("map"), {
+                center: userPos, zoom: 18, tilt: 60, disableDefaultUI: true, mapId: "90f87356969d889"
+            });
+            marker = new google.maps.Marker({
+                position: userPos, map: map,
+                icon: { path: google.maps.SymbolPath.CIRCLE, scale: 10, fillColor

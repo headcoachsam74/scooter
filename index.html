@@ -2,77 +2,86 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Kaabo Pro Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Kaabo Dash</title>
     <style>
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; font-family: 'Segoe UI', system-ui, sans-serif; overflow: hidden; color: white; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; font-family: sans-serif; overflow: hidden; color: white; }
         
-        #map { position: absolute; top: 0; bottom: 0; width: 100%; z-index: 1; background: #1a1a1a; }
+        #map { position: absolute; top: 0; bottom: 0; width: 100%; z-index: 1; }
 
-        /* Barre Supérieure */
+        /* Interface */
         #top-bar {
-            position: absolute; top: 10px; left: 10px; right: 10px; height: 130px; z-index: 10;
-            background: rgba(10, 10, 10, 0.9); backdrop-filter: blur(15px); border-radius: 25px;
-            border: 1px solid rgba(255, 255, 255, 0.1); display: grid; grid-template-columns: 1fr 1.5fr 1fr;
-            align-items: center; padding: 10px; box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+            position: absolute; top: 10px; left: 10px; right: 10px; height: 120px; z-index: 10;
+            background: rgba(15, 15, 15, 0.9); backdrop-filter: blur(10px); border-radius: 20px;
+            display: grid; grid-template-columns: 1fr 1fr 1fr; align-items: center; text-align: center;
+            border: 1px solid rgba(255,255,255,0.1);
         }
 
-        .side-info { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; color: #888; font-weight: bold; font-size: 11px; text-transform: uppercase; cursor: pointer; }
-        .side-info span { color: #fff; font-size: 18px; font-variant-numeric: tabular-nums; }
-        #speedometer { text-align: center; border-left: 1px solid #333; border-right: 1px solid #333; height: 80%; display: flex; flex-direction: column; justify-content: center; }
-        #speed-val { font-size: 50px; font-weight: 900; color: #ff0000; line-height: 1; }
-        .unit { font-size: 11px; color: #666; letter-spacing: 2px; font-weight: 800; }
+        #speed-val { font-size: 45px; font-weight: 900; color: #ff0000; display: block; }
+        .label { font-size: 10px; color: #777; text-transform: uppercase; margin-bottom: 5px; }
+        .val { font-size: 18px; font-weight: bold; }
 
-        /* Dock Musique */
         #music-dock {
-            position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
-            width: 220px; height: 70px; z-index: 10;
-            background: rgba(10, 10, 10, 0.9); backdrop-filter: blur(20px);
-            border-radius: 35px; border: 1px solid rgba(255, 255, 255, 0.1);
-            display: flex; align-items: center; justify-content: center; gap: 20px;
+            position: absolute; bottom: 25px; left: 50%; transform: translateX(-50%);
+            width: 200px; height: 60px; z-index: 10;
+            background: rgba(15, 15, 15, 0.9); backdrop-filter: blur(10px);
+            border-radius: 30px; display: flex; align-items: center; justify-content: center; gap: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
         }
-        .music-btn { background: none; border: none; color: white; font-size: 28px; cursor: pointer; }
 
-        /* Modale Météo */
-        #weather-modal { display: none; position: fixed; inset: 0; z-index: 3000; background: rgba(0,0,0,0.9); align-items: center; justify-content: center; }
-        .modal-content { background: #111; padding: 25px; border-radius: 30px; width: 85%; max-width: 350px; border: 1px solid #ff0000; text-align: center; }
-        .forecast-container { display: flex; overflow-x: auto; gap: 12px; margin: 20px 0; padding-bottom: 10px; }
-        .forecast-item { min-width: 60px; background: #1a1a1a; padding: 10px; border-radius: 15px; border: 1px solid #333; }
+        /* Start Screen */
+        #start-screen { 
+            position: fixed; inset: 0; background: #000; z-index: 2000; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+        }
+        #start-btn { 
+            padding: 20px 50px; background: #ff0000; color: white; border: none; 
+            border-radius: 50px; font-size: 20px; font-weight: bold; cursor: pointer;
+        }
 
-        /* Start Screen corrigé */
-        #start-screen { position: fixed; inset: 0; background: #000; z-index: 2000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        #start-btn { padding: 20px 60px; background: #ff0000; color: white; border: none; border-radius: 50px; font-size: 22px; font-weight: 900; cursor: pointer; margin-top: 20px; }
+        /* Modal */
+        #weather-modal { 
+            display: none; position: fixed; inset: 0; z-index: 3000; 
+            background: rgba(0,0,0,0.9); align-items: center; justify-content: center; 
+        }
+        .modal-content { background: #111; padding: 20px; border-radius: 20px; width: 80%; border: 1px solid #ff0000; text-align: center; }
     </style>
 </head>
 <body>
 
     <div id="start-screen">
-        <h1 style="color:#ff0000; letter-spacing: 15px; font-size: 40px; margin: 0;">KAABO</h1>
-        <p style="color: #444; font-weight: bold; margin-bottom: 20px;">DASHBOARD PRO</p>
+        <h1 style="color:#ff0000; letter-spacing: 10px;">KAABO</h1>
         <button id="start-btn" onclick="startApp()">DÉMARRER</button>
     </div>
 
     <div id="top-bar">
-        <div class="side-info" onclick="openWeather()">MÉTÉO<span id="temp-val">--°</span></div>
-        <div id="speedometer">
-            <span id="speed-val">0</span>
-            <span class="unit">KM/H</span>
+        <div onclick="openWeather()">
+            <div class="label">Météo</div>
+            <div class="val" id="temp-val">--°</div>
         </div>
-        <div class="side-info">DISTANCE<span id="odo-val">0.00</span><button style="background:#222;color:#fff;border:none;border-radius:5px;font-size:9px;margin-top:4px;padding:2px 6px;" onclick="resetOdo()">RESET</button></div>
+        <div>
+            <span id="speed-val">0</span>
+            <div class="label" style="margin-top:-5px">KM/H</div>
+        </div>
+        <div>
+            <div class="label">Distance</div>
+            <div class="val" id="odo-val">0.00</div>
+            <button onclick="resetOdo()" style="font-size:8px; background:#333; color:white; border:none; border-radius:4px;">RESET</button>
+        </div>
     </div>
 
     <div id="music-dock">
-        <button class="music-btn" onclick="controlMusic('previoustrack')">⏮</button>
-        <button class="music-btn" style="color:#ff0000; font-size:40px;" onclick="controlMusic('playpause')">⏯</button>
-        <button class="music-btn" onclick="controlMusic('nexttrack')">⏭</button>
+        <button onclick="console.log('prev')" style="background:none; border:none; color:white; font-size:20px;">⏮</button>
+        <button onclick="console.log('play')" style="background:none; border:none; color:#ff0000; font-size:30px;">⏯</button>
+        <button onclick="console.log('next')" style="background:none; border:none; color:white; font-size:20px;">⏭</button>
     </div>
 
     <div id="weather-modal" onclick="closeWeather()">
-        <div class="modal-content" onclick="event.stopPropagation()">
-            <h3 style="margin-top:0">PRÉVISIONS</h3>
-            <div id="forecast-list" class="forecast-container"></div>
-            <button style="padding: 12px 40px; background: #ff0000; border: none; border-radius: 25px; color: white; font-weight: bold; cursor: pointer;" onclick="closeWeather()">RETOUR</button>
+        <div class="modal-content">
+            <h3>PRÉVISIONS</h3>
+            <div id="forecast-list" style="display:flex; overflow-x:auto; gap:10px; margin:15px 0;"></div>
+            <button onclick="closeWeather()" style="padding:10px 20px; background:#ff0000; border:none; border-radius:20px; color:white;">FERMER</button>
         </div>
     </div>
 
@@ -81,93 +90,51 @@
     <script>
         let map, marker, userPos = { lat: 45.5, lng: -73.5 }, lastPos = null;
         let totalDistance = parseFloat(localStorage.getItem('kaabo_odo')) || 0;
-        let lastWeatherUpdate = 0;
 
         function initMap() {
             try {
                 map = new google.maps.Map(document.getElementById("map"), {
-                    center: userPos, zoom: 19, tilt: 60, heading: 0,
-                    disableDefaultUI: true, gestureHandling: "none", mapId: "90f87356969d889"
+                    center: userPos, zoom: 18, tilt: 45, heading: 0,
+                    disableDefaultUI: true, mapId: "90f87356969d889"
                 });
                 marker = new google.maps.Marker({
                     position: userPos, map: map,
-                    icon: { path: google.maps.SymbolPath.CIRCLE, scale: 12, fillColor: "#ff0000", fillOpacity: 1, strokeWeight: 3, strokeColor: "#ffffff" }
+                    icon: { path: google.maps.SymbolPath.CIRCLE, scale: 10, fillColor: "#ff0000", fillOpacity: 1, strokeWeight: 2, strokeColor: "#fff" }
                 });
                 document.getElementById('odo-val').innerText = totalDistance.toFixed(2);
-            } catch (e) { console.error("Erreur Map:", e); }
+            } catch(e) { console.error("Google Maps non chargé"); }
         }
 
         async function startApp() {
             document.getElementById('start-screen').style.display = 'none';
-            if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(()=>{});
             
-            // Activation GPS
-            if ("geolocation" in navigator) {
-                activateGPS();
+            // GPS
+            if (navigator.geolocation) {
+                navigator.geolocation.watchPosition((p) => {
+                    const newPos = { lat: p.coords.latitude, lng: p.coords.longitude };
+                    const speed = (p.coords.speed || 0) * 3.6;
+                    
+                    document.getElementById('speed-val').innerText = Math.round(speed);
+                    
+                    if (lastPos && speed > 1) {
+                        totalDistance += haversine(lastPos, newPos);
+                        localStorage.setItem('kaabo_odo', totalDistance);
+                        document.getElementById('odo-val').innerText = totalDistance.toFixed(2);
+                    }
+                    lastPos = newPos;
+                    if (marker) marker.setPosition(newPos);
+                    if (map) { 
+                        map.setCenter(newPos);
+                        map.setHeading(p.coords.heading || 0);
+                    }
+                }, null, { enableHighAccuracy: true });
             }
 
-            // Boussole
-            if (window.DeviceOrientationEvent) {
-                if (typeof DeviceOrientationEvent.requestPermission === 'function') {
-                    const res = await DeviceOrientationEvent.requestPermission();
-                    if (res === 'granted') window.addEventListener('deviceorientation', handleRotation, true);
-                } else {
-                    window.addEventListener('deviceorientation', handleRotation, true);
-                }
-            }
+            // Météo Initiale
+            fetchWeather();
         }
 
-        function handleRotation(e) {
-            let heading = e.webkitCompassHeading || (360 - e.alpha);
-            if (heading && map) map.setHeading(heading);
-        }
-
-        function activateGPS() {
-            navigator.geolocation.watchPosition((p) => {
-                userPos = { lat: p.coords.latitude, lng: p.coords.longitude };
-                const speed = (p.coords.speed || 0) * 3.6;
-                
-                // Odomètre
-                if (lastPos && speed > 1) {
-                    const d = haversineDistance(lastPos, userPos);
-                    totalDistance += d;
-                    localStorage.setItem('kaabo_odo', totalDistance);
-                    document.getElementById('odo-val').innerText = totalDistance.toFixed(2);
-                }
-                lastPos = userPos;
-
-                if (marker) marker.setPosition(userPos);
-                if (map) {
-                    map.setCenter(userPos);
-                    map.setZoom(speed > 30 ? 17 : 19);
-                }
-                document.getElementById('speed-val').innerText = Math.round(speed);
-                
-                if (Date.now() - lastWeatherUpdate > 600000) { fetchWeather(); lastWeatherUpdate = Date.now(); }
-            }, (err) => console.error(err), { enableHighAccuracy: true });
-        }
-
-        async function fetchWeather() {
-            if (!userPos) return;
-            try {
-                const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${userPos.lat}&longitude=${userPos.lng}&current_weather=true&hourly=temperature_2m,weathercode&forecast_days=1`);
-                const data = await res.json();
-                document.getElementById('temp-val').innerText = Math.round(data.current_weather.temperature) + "°";
-                
-                const list = document.getElementById('forecast-list');
-                list.innerHTML = "";
-                const hour = new Date().getHours();
-                for(let i = hour + 1; i < hour + 8; i++) {
-                    const idx = i > 23 ? i-24 : i;
-                    const temp = Math.round(data.hourly.temperature_2m[i]);
-                    const code = data.hourly.weathercode[i];
-                    const icon = code > 50 ? "🌧️" : (code > 0 ? "☁️" : "☀️");
-                    list.innerHTML += `<div class="forecast-item"><div>${idx}h</div><div style="font-size:20px;">${icon}</div><div style="color:#ff0000;font-weight:bold">${temp}°</div></div>`;
-                }
-            } catch (e) { console.error("Météo fail"); }
-        }
-
-        function haversineDistance(p1, p2) {
+        function haversine(p1, p2) {
             const R = 6371;
             const dLat = (p2.lat - p1.lat) * Math.PI / 180;
             const dLon = (p2.lng - p1.lng) * Math.PI / 180;
@@ -175,15 +142,23 @@
             return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
         }
 
-        function controlMusic(action) {
-            // Signal universel pour l'appli de musique active
-            if ('mediaSession' in navigator) {
-                console.log("Action musique: " + action);
-                // Note: Navigator mediaSession nécessite une lecture audio locale pour être pleinement actif
-            }
+        async function fetchWeather() {
+            try {
+                const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${userPos.lat}&longitude=${userPos.lng}&current_weather=true&hourly=temperature_2m,weathercode&forecast_days=1`);
+                const data = await res.json();
+                document.getElementById('temp-val').innerText = Math.round(data.current_weather.temperature) + "°";
+                
+                const list = document.getElementById('forecast-list');
+                list.innerHTML = "";
+                const h = new Date().getHours();
+                for(let i=h+1; i<h+7; i++) {
+                    const temp = Math.round(data.hourly.temperature_2m[i] || 0);
+                    list.innerHTML += `<div style="min-width:50px;">${i%24}h<br>☀️<br><b>${temp}°</b></div>`;
+                }
+            } catch(e) {}
         }
 
-        function resetOdo() { if(confirm("Réinitialiser le trajet ?")) { totalDistance = 0; localStorage.setItem('kaabo_odo', 0); document.getElementById('odo-val').innerText = "0.00"; } }
+        function resetOdo() { totalDistance = 0; localStorage.setItem('kaabo_odo', 0); document.getElementById('odo-val').innerText = "0.00"; }
         function openWeather() { document.getElementById('weather-modal').style.display = 'flex'; }
         function closeWeather() { document.getElementById('weather-modal').style.display = 'none'; }
     </script>
